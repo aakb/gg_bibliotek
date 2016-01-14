@@ -2,4 +2,6 @@
     <string name="app_name">gg_bibliotek</string>
     <string name="title_activity_main">Bibliotek</string>
     <string name="hello_world">Hello world!</string>
+    <string name="camera_instruction">Tap to take picture</string>
+    <string name="take_image">Take image</string>
 </resources>
