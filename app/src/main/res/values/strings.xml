@@ -1,7 +1,26 @@
 <resources>
-    <string name="app_name">gg_bibliotek</string>
-    <string name="title_activity_main">Bibliotek</string>
-    <string name="hello_world">Hello world!</string>
-    <string name="camera_instruction">Tap to take picture</string>
+    <string name="app_name">Dokk1 Event</string>
+    <string name="countdown_default">...</string>
+    <string name="progress_image">Images</string>
+    <string name="progress_videos">Videos</string>
+    <string name="event">Event: </string>
+    <string name="no_media_files">No media files</string>
+    <plurals name="uploading_n_files">
+        <item quantity="one">Uploading 1 file</item>
+        <item quantity="other">Uploading %d</item>
+    </plurals>
+    <string name="progress_memos">Memos</string>
+    <string name="recording_memo">Recording memo</string>
+
+    <string name="voice_command_start_program">Start event</string>
+
+    <string name="start_memo">Dictate memo</string>
+    <string name="finish">Finish report</string>
     <string name="take_image">Take image</string>
+    <string name="record_video">Record video</string>
+    <string name="cancel">Cancel and exit</string>
+    <string name="confirm_cancel">Yes</string>
+    <string name="abort_cancel">No</string>
+    <string name="scan_event">Scan event</string>
+    <string name="sending_report">Sending report</string>
 </resources>

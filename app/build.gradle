@@ -8,13 +8,13 @@ repositories {
 }
 
 android {
-    compileSdkVersion "Google Inc.:Glass Development Kit Preview:19"
+    compileSdkVersion 'Google Inc.:Glass Development Kit Preview:19'
     buildToolsVersion "23.0.2"
 
     defaultConfig {
-        applicationId "itk.aakb.dk.gg_bibliotek"
+        applicationId "itk.aakb.dk.gg_saarpleje"
         minSdkVersion 19
-        targetSdkVersion 21
+        targetSdkVersion 19
         versionCode 1
         versionName "1.0"
     }
@@ -29,8 +29,18 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/NOTICE.txt'
+    }
 }
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile 'com.google.zxing:core:3.2.1'
+    compile 'commons-validator:commons-validator:1.5.0'
 }

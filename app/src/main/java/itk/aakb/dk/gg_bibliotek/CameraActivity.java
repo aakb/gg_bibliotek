@@ -9,11 +9,8 @@ import android.hardware.Camera.PictureCallback;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
-import android.view.MotionEvent;
 import android.widget.FrameLayout;
-
-import com.google.android.glass.touchpad.Gesture;
-import com.google.android.glass.touchpad.GestureDetector;
+import android.widget.TextView;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -21,13 +18,18 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class CameraActivity extends Activity {
     private static final String TAG = "CameraActivity";
 
     private Camera camera;
     private CameraPreview cameraPreview;
-    private GestureDetector mGestureDetector;
+    private TextView countdownText;
+    private Timer timer;
+    private int timerExecutions = 0;
+    private String filePrefix;
 
     /**
      * On create.
@@ -40,7 +42,13 @@ public class CameraActivity extends Activity {
 
         Log.i(TAG, "Launching activity");
 
-        setContentView(R.layout.activity_camera);
+        // Get file prefix
+        Intent intent = getIntent();
+        filePrefix = intent.getStringExtra("FILE_PREFIX");
+
+        setContentView(R.layout.activity_camera_countdown);
+
+        countdownText = (TextView) findViewById(R.id.text_camera_duration);
 
         if (!checkCameraHardware(this)) {
             Log.i(TAG, "no camera");
@@ -55,7 +63,34 @@ public class CameraActivity extends Activity {
         FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
         preview.addView(cameraPreview);
 
-        mGestureDetector = createGestureDetector(this);
+        // Reset timer executions.
+        timerExecutions = 0;
+
+        countdownText.setText("3");
+
+        timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                timerExecutions++;
+
+                Log.i(TAG, "" + timerExecutions);
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        countdownText.setText("" + (3 - timerExecutions));
+                    }
+                });
+
+                if (timerExecutions >= 3) {
+                    Log.i(TAG, "timer cancel, take picture");
+                    cancel();
+                    // Take picture
+                    camera.takePicture(null, null, mPicture);
+                }
+            }
+        }, 2000, 1000);
     }
 
     /**
@@ -158,10 +193,10 @@ public class CameraActivity extends Activity {
     /**
      * Create a File for saving an image
      */
-    private static File getOutputImageFile() {
-        // @TODO: To be safe, you should check that the SDCard is mounted using Environment.getExternalStorageState() before doing this.
+    private File getOutputImageFile() {
+        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), MainActivity.FILE_DIRECTORY);
 
-        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), MainActivity.FILE_DIRECTORY);
+        Log.i(TAG, mediaStorageDir.getAbsolutePath());
 
         // Create the storage directory if it does not exist
         if (!mediaStorageDir.exists()) {
@@ -172,40 +207,9 @@ public class CameraActivity extends Activity {
         }
 
         // Create a media file name
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String timeStamp = new SimpleDateFormat("yyyy-MM-dd_HHmmss").format(new Date());
         File mediaFile = new File(mediaStorageDir.getPath() + File.separator +
-                    "IMG_" + timeStamp + ".jpg");
-
+                filePrefix + "_image_" + timeStamp + ".jpg");
         return mediaFile;
-    }
-
-    private GestureDetector createGestureDetector(Context context) {
-        GestureDetector gestureDetector = new GestureDetector(context);
-        //Create a base listener for generic gestures
-        gestureDetector.setBaseListener( new GestureDetector.BaseListener() {
-            @Override
-            public boolean onGesture(Gesture gesture) {
-                if (gesture == Gesture.TAP) {
-                    // Take picture
-                    camera.takePicture(null, null, mPicture);
-
-                    return true;
-                }
-
-                return false;
-            }
-        });
-        return gestureDetector;
-    }
-
-    /*
-     * Send generic motion events to the gesture detector
-     */
-    @Override
-    public boolean onGenericMotionEvent(MotionEvent event) {
-        if (mGestureDetector != null) {
-            return mGestureDetector.onMotionEvent(event);
-        }
-        return false;
     }
 }
