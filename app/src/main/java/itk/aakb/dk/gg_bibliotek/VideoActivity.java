@@ -9,13 +9,18 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.AudioManager;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+
+import com.google.android.glass.touchpad.Gesture;
+import com.google.android.glass.touchpad.GestureDetector;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,7 +29,7 @@ import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class VideoActivity extends Activity {
+public class VideoActivity extends Activity implements GestureDetector.BaseListener {
     private static final String TAG = "VideoActivity";
 
     private Camera camera;
@@ -37,15 +42,9 @@ public class VideoActivity extends Activity {
     private String filePrefix;
     private boolean recording = false;
     private String outputPath;
-    private SensorManager mSensorManager;
-    private Sensor mAccelerometer;
-    private Sensor mMagnetometer;
-    private float[] mLastAccelerometer = new float[3];
-    private float[] mLastMagnetometer = new float[3];
-    private boolean mLastAccelerometerSet = false;
-    private boolean mLastMagnetometerSet = false;
-    private float[] mR = new float[9];
-    private float[] mOrientation = new float[3];
+
+    private AudioManager audioManager;
+    private GestureDetector gestureDetector;
 
     /**
      * On create.
@@ -82,14 +81,50 @@ public class VideoActivity extends Activity {
         // Reset timer executions.
         timerExecutions = 0;
 
-        mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
-        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        mMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-
-        mSensorManager.registerListener(mSensorEventListener, mAccelerometer, SensorManager.SENSOR_DELAY_UI);
-        mSensorManager.registerListener(mSensorEventListener, mMagnetometer, SensorManager.SENSOR_DELAY_UI);
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        gestureDetector = new GestureDetector(this).setBaseListener(this);
 
         launchUnlimitedVideo();
+    }
+
+    public boolean onGenericMotionEvent(MotionEvent event) {
+        return gestureDetector.onMotionEvent(event);
+    }
+
+    public boolean onGesture(Gesture gesture) {
+        if (Gesture.TAP.equals(gesture)) {
+            audioManager.playSoundEffect(AudioManager.FX_KEY_CLICK);
+
+            if (recording) {
+                Log.i(TAG, "Stop recording!");
+
+                timer.cancel();
+
+                try {
+                    mediaRecorder.stop();  // stop the recording
+                    releaseMediaRecorder(); // release the MediaRecorder object
+                    releaseCamera();
+
+                    // Add path to file as result
+                    Intent returnIntent = new Intent();
+                    returnIntent.putExtra("path", outputPath);
+                    setResult(RESULT_OK, returnIntent);
+
+                    recording = false;
+
+                    // Finish activity
+                    finish();
+                } catch (Exception e) {
+                    Log.d(TAG, "Exception stopping recording: " + e.getMessage());
+                    releaseMediaRecorder();
+                    releaseCamera();
+                    finish();
+                }
+            }
+
+            return true;
+        }
+        return false;
     }
 
     private void launchUnlimitedVideo() {
@@ -146,8 +181,7 @@ public class VideoActivity extends Activity {
 
                         // Step 6: Prepare configured MediaRecorder
                         mediaRecorder.prepare();
-                    }
-                    catch (IOException e) {
+                    } catch (IOException e) {
                         Log.d(TAG, "IOException preparing MediaRecorder: " + e.getMessage());
                         releaseMediaRecorder();
                         releaseCamera();
@@ -183,76 +217,18 @@ public class VideoActivity extends Activity {
                     }, 1000, 1000);
                 }
             }, 1000);
-        }
-        catch (IllegalStateException e) {
+        } catch (IllegalStateException e) {
             Log.d(TAG, "IllegalStateException preparing MediaRecorder (" + e.getCause() + "): " + e.getMessage());
             releaseMediaRecorder();
             releaseCamera();
             finish();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             Log.d(TAG, "Exception preparing MediaRecorder: " + e.getMessage());
             releaseMediaRecorder();
             releaseCamera();
             finish();
         }
     }
-
-    private final SensorEventListener mSensorEventListener = new SensorEventListener() {
-        @Override
-        public void onAccuracyChanged(Sensor sensor, int accuracy) {
-            // Nothing to do here.
-        }
-
-        @Override
-        public void onSensorChanged(SensorEvent event) {
-            if (event.sensor == mAccelerometer) {
-                System.arraycopy(event.values, 0, mLastAccelerometer, 0, event.values.length);
-                mLastAccelerometerSet = true;
-            } else if (event.sensor == mMagnetometer) {
-                System.arraycopy(event.values, 0, mLastMagnetometer, 0, event.values.length);
-                mLastMagnetometerSet = true;
-            }
-            if (mLastAccelerometerSet && mLastMagnetometerSet) {
-                SensorManager.getRotationMatrix(mR, null, mLastAccelerometer, mLastMagnetometer);
-                SensorManager.getOrientation(mR, mOrientation);
-
-                Log.i(TAG, "o: " + mOrientation[1]);
-
-                if (Math.abs(mOrientation[1]) < 0.10) {
-                    if (recording) {
-                        Log.i(TAG, "Stop recording!");
-
-                        timer.cancel();
-                        mSensorManager.unregisterListener(mSensorEventListener);
-
-                        try {
-                            mediaRecorder.stop();  // stop the recording
-                            releaseMediaRecorder(); // release the MediaRecorder object
-                            releaseCamera();
-
-                            // Add path to file as result
-                            Intent returnIntent = new Intent();
-                            returnIntent.putExtra("path", outputPath);
-                            setResult(RESULT_OK, returnIntent);
-
-                            recording = false;
-
-                            // Finish activity
-                            finish();
-                        }
-                        catch (Exception e) {
-                            Log.d(TAG, "Exception stopping recording: " + e.getMessage());
-                            releaseMediaRecorder();
-                            releaseCamera();
-                            finish();
-                        }
-                    }
-                }
-            }
-        }
-    };
-
 
     /**
      * A safe way to get an instance of the Camera object.
@@ -296,10 +272,6 @@ public class VideoActivity extends Activity {
         timer.cancel();
         releaseMediaRecorder();       // if you are using MediaRecorder, release it first
         releaseCamera();
-
-        if (mSensorManager != null) {
-            mSensorManager.unregisterListener(mSensorEventListener);
-        }
     }
 
     /**
@@ -312,17 +284,11 @@ public class VideoActivity extends Activity {
         timer.cancel();
         releaseMediaRecorder();       // if you are using MediaRecorder, release it first
         releaseCamera();
-
-        if (mSensorManager != null) {
-            mSensorManager.unregisterListener(mSensorEventListener);
-        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        mLastAccelerometerSet = false;
-        mLastMagnetometerSet = false;
     }
 
     /**
@@ -366,7 +332,7 @@ public class VideoActivity extends Activity {
         // Create a media file name
         String timeStamp = new SimpleDateFormat("yyyy-MM-dd_HHmmss").format(new Date());
         File mediaFile = new File(mediaStorageDir.getPath() + File.separator +
-                    filePrefix + "_video_" + timeStamp + ".mp4");
+                filePrefix + "_video_" + timeStamp + ".mp4");
         return mediaFile;
     }
 }
