@@ -1,16 +1,22 @@
 package itk.aakb.dk.gg_bibliotek;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.AudioManager;
 import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.widget.TextView;
+
+import com.google.android.glass.touchpad.Gesture;
+import com.google.android.glass.touchpad.GestureDetector;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,7 +25,7 @@ import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class MemoActivity extends Activity {
+public class MemoActivity extends Activity implements GestureDetector.BaseListener {
     private static final String TAG = "MemoActivity";
 
     private MediaRecorder mRecorder;
@@ -32,15 +38,8 @@ public class MemoActivity extends Activity {
     private String outputPath;
     private String filePrefix;
 
-    private SensorManager mSensorManager;
-    private Sensor mAccelerometer;
-    private Sensor mMagnetometer;
-    private float[] mLastAccelerometer = new float[3];
-    private float[] mLastMagnetometer = new float[3];
-    private boolean mLastAccelerometerSet = false;
-    private boolean mLastMagnetometerSet = false;
-    private float[] mR = new float[9];
-    private float[] mOrientation = new float[3];
+    private AudioManager audioManager;
+    private GestureDetector gestureDetector;
 
     /**
      * On create.
@@ -62,12 +61,8 @@ public class MemoActivity extends Activity {
         durationText = (TextView) findViewById(R.id.text_memo_duration);
         outputPath = getOutputVideoFile().toString();
 
-        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        mMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-
-        mSensorManager.registerListener(mSensorEventListener, mAccelerometer, SensorManager.SENSOR_DELAY_UI);
-        mSensorManager.registerListener(mSensorEventListener, mMagnetometer, SensorManager.SENSOR_DELAY_UI);
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        gestureDetector = new GestureDetector(this).setBaseListener(this);
 
         startRecording();
     }
@@ -81,8 +76,6 @@ public class MemoActivity extends Activity {
 
         timer.cancel();
         stopRecording();
-
-        mSensorManager.unregisterListener(mSensorEventListener);
     }
 
     /**
@@ -94,15 +87,48 @@ public class MemoActivity extends Activity {
 
         timer.cancel();
         stopRecording();
-
-        mSensorManager.unregisterListener(mSensorEventListener);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        mLastAccelerometerSet = false;
-        mLastMagnetometerSet = false;
+    }
+
+    public boolean onGenericMotionEvent(MotionEvent event) {
+        return gestureDetector.onMotionEvent(event);
+    }
+
+    public boolean onGesture(Gesture gesture) {
+        if (Gesture.TAP.equals(gesture)) {
+            audioManager.playSoundEffect(AudioManager.FX_KEY_CLICK);
+
+            if (recording) {
+                Log.i(TAG, "Stop recording!");
+
+                timer.cancel();
+
+                try {
+                    stopRecording();
+
+                    // Add path to file as result
+                    Intent returnIntent = new Intent();
+                    returnIntent.putExtra("path", outputPath);
+                    setResult(RESULT_OK, returnIntent);
+
+                    recording = false;
+
+                    // Finish activity
+                    finish();
+                } catch (Exception e) {
+                    Log.d(TAG, "Exception stopping recording: " + e.getMessage());
+                    stopRecording();
+                    finish();
+                }
+            }
+
+            return true;
+        }
+        return false;
     }
 
     private void startRecording() {
@@ -158,57 +184,6 @@ public class MemoActivity extends Activity {
             mRecorder = null;
         }
     }
-
-    private final SensorEventListener mSensorEventListener = new SensorEventListener() {
-        @Override
-        public void onAccuracyChanged(Sensor sensor, int accuracy) {
-            // Nothing to do here.
-        }
-
-        @Override
-        public void onSensorChanged(SensorEvent event) {
-            if (event.sensor == mAccelerometer) {
-                System.arraycopy(event.values, 0, mLastAccelerometer, 0, event.values.length);
-                mLastAccelerometerSet = true;
-            } else if (event.sensor == mMagnetometer) {
-                System.arraycopy(event.values, 0, mLastMagnetometer, 0, event.values.length);
-                mLastMagnetometerSet = true;
-            }
-            if (mLastAccelerometerSet && mLastMagnetometerSet) {
-                SensorManager.getRotationMatrix(mR, null, mLastAccelerometer, mLastMagnetometer);
-                SensorManager.getOrientation(mR, mOrientation);
-
-                Log.i(TAG, "o: " + mOrientation[1]);
-
-                if (Math.abs(mOrientation[1]) < 0.10) {
-                    if (recording) {
-                        Log.i(TAG, "Stop recording!");
-
-                        timer.cancel();
-                        mSensorManager.unregisterListener(mSensorEventListener);
-
-                        try {
-                            stopRecording();
-
-                            // Add path to file as result
-                            Intent returnIntent = new Intent();
-                            returnIntent.putExtra("path", outputPath);
-                            setResult(RESULT_OK, returnIntent);
-
-                            recording = false;
-
-                            // Finish activity
-                            finish();
-                        } catch (Exception e) {
-                            Log.d(TAG, "Exception stopping recording: " + e.getMessage());
-                            stopRecording();
-                            finish();
-                        }
-                    }
-                }
-            }
-        }
-    };
 
     /**
      * Create a File for saving a video
