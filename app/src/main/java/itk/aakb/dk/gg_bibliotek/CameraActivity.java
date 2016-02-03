@@ -6,11 +6,16 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
 import android.hardware.Camera.PictureCallback;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+
+import com.google.android.glass.touchpad.Gesture;
+import com.google.android.glass.touchpad.GestureDetector;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -21,7 +26,7 @@ import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class CameraActivity extends Activity {
+public class CameraActivity extends Activity implements GestureDetector.BaseListener {
     private static final String TAG = "CameraActivity";
 
     private Camera camera;
@@ -30,6 +35,9 @@ public class CameraActivity extends Activity {
     private Timer timer;
     private int timerExecutions = 0;
     private String filePrefix;
+
+    private AudioManager audioManager;
+    private GestureDetector gestureDetector;
 
     /**
      * On create.
@@ -63,34 +71,23 @@ public class CameraActivity extends Activity {
         FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
         preview.addView(cameraPreview);
 
-        // Reset timer executions.
-        timerExecutions = 0;
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        gestureDetector = new GestureDetector(this).setBaseListener(this);
+    }
 
-        countdownText.setText("3");
+    public boolean onGenericMotionEvent(MotionEvent event) {
+        return gestureDetector.onMotionEvent(event);
+    }
 
-        timer = new Timer();
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                timerExecutions++;
+    public boolean onGesture(Gesture gesture) {
+        if (Gesture.TAP.equals(gesture)) {
+            audioManager.playSoundEffect(AudioManager.FX_KEY_CLICK);
 
-                Log.i(TAG, "" + timerExecutions);
+            camera.takePicture(null, null, mPicture);
 
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        countdownText.setText("" + (3 - timerExecutions));
-                    }
-                });
-
-                if (timerExecutions >= 3) {
-                    Log.i(TAG, "timer cancel, take picture");
-                    cancel();
-                    // Take picture
-                    camera.takePicture(null, null, mPicture);
-                }
-            }
-        }, 2000, 1000);
+            return true;
+        }
+        return false;
     }
 
     /**
