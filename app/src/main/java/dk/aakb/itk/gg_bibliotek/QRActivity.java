@@ -1,4 +1,4 @@
-package itk.aakb.dk.gg_bibliotek;
+package dk.aakb.itk.gg_bibliotek;
 
 import android.app.Activity;
 import android.content.Context;
@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+
+import dk.aakb.itk.gg_bibliotek.R;
 
 public class QRActivity extends Activity {
     private static final String TAG = "QRActivity";

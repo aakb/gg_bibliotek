@@ -1,9 +1,11 @@
-package itk.aakb.dk.gg_bibliotek;
+package dk.aakb.itk.gg_bibliotek;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.hardware.Camera;
 import android.hardware.Camera.PictureCallback;
 import android.media.AudioManager;
@@ -23,21 +25,25 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Timer;
-import java.util.TimerTask;
+
+import dk.aakb.itk.gg_bibliotek.R;
 
 public class CameraActivity extends Activity implements GestureDetector.BaseListener {
     private static final String TAG = "CameraActivity";
+    private static final int STATE_PREVIEW = 1;
+    private static final int STATE_ACTION = 2;
 
     private Camera camera;
     private CameraPreview cameraPreview;
-    private TextView countdownText;
-    private Timer timer;
-    private int timerExecutions = 0;
+    private TextView textField;
     private String filePrefix;
 
     private AudioManager audioManager;
     private GestureDetector gestureDetector;
+
+    private int state;
+
+    private byte[] pictureData;
 
     /**
      * On create.
@@ -54,9 +60,11 @@ public class CameraActivity extends Activity implements GestureDetector.BaseList
         Intent intent = getIntent();
         filePrefix = intent.getStringExtra("FILE_PREFIX");
 
-        setContentView(R.layout.activity_camera_countdown);
+        setContentView(R.layout.activity_camera);
 
-        countdownText = (TextView) findViewById(R.id.text_camera_duration);
+        textField = (TextView) findViewById(R.id.text_camera_helptext);
+
+        textField.setText("Tap to take picture");
 
         if (!checkCameraHardware(this)) {
             Log.i(TAG, "no camera");
@@ -66,6 +74,12 @@ public class CameraActivity extends Activity implements GestureDetector.BaseList
         // Create an instance of Camera
         camera = getCameraInstance();
 
+        if (camera == null) {
+            // @TODO: Throw toast
+
+            finish();
+        }
+
         // Create our Preview view and set it as the content of our activity.
         cameraPreview = new CameraPreview(this, camera);
         FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
@@ -73,6 +87,8 @@ public class CameraActivity extends Activity implements GestureDetector.BaseList
 
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         gestureDetector = new GestureDetector(this).setBaseListener(this);
+
+        state = STATE_PREVIEW;
     }
 
     public boolean onGenericMotionEvent(MotionEvent event) {
@@ -81,32 +97,85 @@ public class CameraActivity extends Activity implements GestureDetector.BaseList
 
     public boolean onGesture(Gesture gesture) {
         if (Gesture.TAP.equals(gesture)) {
-            audioManager.playSoundEffect(AudioManager.FX_KEY_CLICK);
-
-            camera.takePicture(null, null, mPicture);
-
-            return true;
+            if (state == STATE_PREVIEW) {
+                handleSingleTap();
+                return true;
+            }
         }
+        else if (Gesture.SWIPE_RIGHT.equals(gesture)) {
+            if (state == STATE_ACTION) {
+                handleForwardSwipe();
+                return true;
+            }
+        }
+        else if (Gesture.SWIPE_LEFT.equals(gesture)) {
+            if (state == STATE_ACTION) {
+                handleBackwardSwipe();
+                return true;
+            }
+        }
+
         return false;
+    }
+
+    private void handleSingleTap() {
+        Log.i(TAG, "Single tap.");
+
+        audioManager.playSoundEffect(AudioManager.FX_KEY_CLICK);
+
+        camera.takePicture(null, null, mPicture);
+    }
+
+    private void handleForwardSwipe() {
+        Log.i(TAG, "InstaShare!!!");
+        returnPicture(true);
+    }
+
+    private void handleBackwardSwipe() {
+        Log.i(TAG, "Archive.");
+        returnPicture(false);
+    }
+
+    private void returnPicture(boolean instaShare) {
+        File pictureFile = getOutputImageFile();
+        if (pictureFile == null) {
+            Log.d(TAG, "Error creating media file, check storage permissions");
+            return;
+        }
+
+        try {
+            FileOutputStream fos = new FileOutputStream(pictureFile);
+            fos.write(pictureData);
+            fos.close();
+
+            // Add path to file as result
+            Intent returnIntent = new Intent();
+            returnIntent.putExtra("path", pictureFile.getAbsolutePath());
+            returnIntent.putExtra("instaShare", instaShare);
+            setResult(RESULT_OK, returnIntent);
+
+            // Finish activity
+            finish();
+        } catch (FileNotFoundException e) {
+            Log.d(TAG, "File not found: " + e.getMessage());
+        } catch (IOException e) {
+            Log.d(TAG, "Error accessing file: " + e.getMessage());
+        }
     }
 
     /**
      * A safe way to get an instance of the Camera object.
      */
     public static Camera getCameraInstance() {
-        Camera c = null;
-
         Log.i(TAG, "getting camera instance...");
         try {
-            c = Camera.open(); // attempt to get a Camera instance
+            Camera c = Camera.open(); // attempt to get a Camera instance
+
+            return c; // returns null if camera is unavailable
         } catch (Exception e) {
             Log.e(TAG, "could not getCameraInstance");
-            throw e;
-            // Camera is not available (in use or does not exist)
-            // @TODO: Throw Toast!
+            return null;
         }
-
-        return c; // returns null if camera is unavailable
     }
 
     /**
@@ -126,34 +195,17 @@ public class CameraActivity extends Activity implements GestureDetector.BaseList
      * Picture callback.
      */
     private PictureCallback mPicture = new PictureCallback() {
-
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
             releaseCamera();
 
-            File pictureFile = getOutputImageFile();
-            if (pictureFile == null) {
-                Log.d(TAG, "Error creating media file, check storage permissions");
-                return;
-            }
+            pictureData = data;
 
-            try {
-                FileOutputStream fos = new FileOutputStream(pictureFile);
-                fos.write(data);
-                fos.close();
+            textField.setBackgroundColor(Color.argb(125, 0, 0, 0));
+            textField.setTextColor(Color.WHITE);
+            textField.setText("\nSwipe FORWARD to INSTASHARE.\nSwipe BACK to ARCHIVE.\nSwipe DOWN to CANCEL.\n");
 
-                // Add path to file as result
-                Intent returnIntent = new Intent();
-                returnIntent.putExtra("path", pictureFile.getAbsolutePath());
-                setResult(RESULT_OK, returnIntent);
-
-                // Finish activity
-                finish();
-            } catch (FileNotFoundException e) {
-                Log.d(TAG, "File not found: " + e.getMessage());
-            } catch (IOException e) {
-                Log.d(TAG, "Error accessing file: " + e.getMessage());
-            }
+            state = STATE_ACTION;
         }
     };
 

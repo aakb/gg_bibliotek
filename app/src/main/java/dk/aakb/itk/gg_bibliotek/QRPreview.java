@@ -1,4 +1,4 @@
-package itk.aakb.dk.gg_bibliotek;
+package dk.aakb.itk.gg_bibliotek;
 
 import android.content.Context;
 import android.hardware.Camera;

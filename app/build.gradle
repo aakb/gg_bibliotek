@@ -12,7 +12,7 @@ android {
     buildToolsVersion "23.0.2"
 
     defaultConfig {
-        applicationId "itk.aakb.dk.gg_saarpleje"
+        applicationId "dk.aakb.itk.gg_bibliotek"
         minSdkVersion 19
         targetSdkVersion 19
         versionCode 1

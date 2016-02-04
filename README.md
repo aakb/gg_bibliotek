@@ -1,7 +1,3 @@
-# gg_saarpleje
-Google Glass saarpleje prototype
+# gg_bibliotek
+Google Glass bibliotek prototype
 
-
-## Mail proxy
-
-See [webservice/README.md](webservice/README.md).

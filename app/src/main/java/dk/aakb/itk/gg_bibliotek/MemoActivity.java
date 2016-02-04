@@ -1,12 +1,8 @@
-package itk.aakb.dk.gg_bibliotek;
+package dk.aakb.itk.gg_bibliotek;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.media.AudioManager;
 import android.media.MediaRecorder;
 import android.os.Bundle;
@@ -24,6 +20,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import dk.aakb.itk.gg_bibliotek.R;
 
 public class MemoActivity extends Activity implements GestureDetector.BaseListener {
     private static final String TAG = "MemoActivity";

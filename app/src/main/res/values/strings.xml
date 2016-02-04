@@ -12,7 +12,7 @@
     <string name="progress_memos">Memos</string>
     <string name="recording_memo">Recording memo</string>
 
-    <string name="voice_command_start_program">Start event</string>
+    <string name="voice_command_start_program">Start event program</string>
 
     <string name="start_memo">Dictate memo</string>
     <string name="finish">Finish report</string>

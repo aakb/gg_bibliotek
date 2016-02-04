@@ -1,4 +1,4 @@
-package itk.aakb.dk.gg_bibliotek;
+package dk.aakb.itk.gg_bibliotek;
 
 import android.app.Activity;
 import android.content.Context;
@@ -20,10 +20,12 @@ import org.json.JSONException;
 import java.io.File;
 import java.util.ArrayList;
 
-public class MainActivity extends Activity {
-    public static final String FILE_DIRECTORY = "Saarpleje";
+import dk.aakb.itk.gg_bibliotek.R;
 
-    private static final String TAG = "saarpleje MainActivity";
+public class MainActivity extends Activity {
+    public static final String FILE_DIRECTORY = "Bibliotek";
+
+    private static final String TAG = "bibliotek MainActivity";
     private static final int TAKE_PICTURE_REQUEST = 101;
     private static final int RECORD_VIDEO_CAPTURE_REQUEST = 102;
     private static final int SCAN_EVENT_REQUEST = 103;
