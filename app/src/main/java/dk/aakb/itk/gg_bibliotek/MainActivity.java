@@ -367,8 +367,11 @@ public class MainActivity extends Activity {
                 String url = properties.getProperty("ProxyUrl");
                 String username = properties.getProperty("Username");
                 String password = properties.getProperty("Password");
+                String eventId = "d859ba64-c730-44fa-bb00-d2837e41720d";
 
-                new BrilleappenClient(url, username, password, new File(data.getStringExtra("path")), "d859ba64-c730-44fa-bb00-d2837e41720d", instaShare).execute("");
+                // @TODO: Don't create a new client for each file.
+                BrilleappenClient client = new BrilleappenClient(url, username, password, eventId);
+                client.execute(new File(data.getStringExtra("path")), instaShare);
             }
             catch (Exception e) {
                 e.printStackTrace();

@@ -7,27 +7,26 @@ import android.util.Log;
 import java.io.*;
 import java.net.*;
 
-public class BrilleappenClient extends AsyncTask<String, Void, Boolean> {
-    private static final String TAG = "Brilleappen";
+public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
+    private static final String TAG = "bibliotek Brilleappen";
 
     private String url;
     private String username;
     private String password;
-    private File file;
     private String eventId;
-    private boolean share;
 
-    public BrilleappenClient(String url, String username, String password, File file, String eventId, boolean share) {
-        this.url = url;
+    public BrilleappenClient(String url, String username, String password, String eventId) {
+        this.url = url.replaceFirst("/+$", "");
         this.username = username;
         this.password = password;
-        this.file = file;
         this.eventId = eventId;
-        this.share = share;
     }
 
-    protected Boolean doInBackground(String... strings) {
-        sendFile();
+    protected Boolean doInBackground(Object... args) {
+        File file = (File)args[0];
+        boolean share = (boolean)args[1];
+
+        sendFile(file, share);
         return true;
     }
 
@@ -36,11 +35,11 @@ public class BrilleappenClient extends AsyncTask<String, Void, Boolean> {
         // TODO: do something with the feed
     }
 
-    public void sendFile() {
+    public void sendFile(File file, boolean share) {
         try {
             String mimeType = URLConnection.guessContentTypeFromName(file.getName());
 
-            URL url = new URL(this.url + "brilleappen/event/" + eventId + "/file?type=" + mimeType + "&share=" + (share ?  "yes" : "no"));
+            URL url = new URL(this.url + "/brilleappen/event/" + eventId + "/file?type=" + mimeType + "&share=" + (share ?  "yes" : "no"));
 
             HttpURLConnection connection = (HttpURLConnection)url.openConnection();
 
@@ -59,15 +58,11 @@ public class BrilleappenClient extends AsyncTask<String, Void, Boolean> {
             dos.flush();
             dos.close();
 
-            // Responses from the server (code and message)
+            // Response from the server (code and message)
             int serverResponseCode = connection.getResponseCode();
             String response = getResponse(connection);
 
             Log.i(TAG, serverResponseCode + ": " + response);
-        } catch (MalformedURLException ex) {
-            Log.e(TAG, ex.getMessage());
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage());
         } catch (Throwable t) {
             Log.e(TAG, t.getMessage());
         }
