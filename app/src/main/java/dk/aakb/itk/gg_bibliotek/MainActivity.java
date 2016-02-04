@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.AssetManager;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Environment;
@@ -18,7 +19,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Properties;
 
 import dk.aakb.itk.gg_bibliotek.R;
 
@@ -351,9 +354,27 @@ public class MainActivity extends Activity {
         if (requestCode == TAKE_PICTURE_REQUEST && resultCode == RESULT_OK) {
             Log.i(TAG, "Received image: " + data.getStringExtra("path"));
 
+            boolean instaShare = data.getBooleanExtra("instaShare", false);
             imagePaths.add(data.getStringExtra("path"));
             saveState();
             updateUI();
+
+            try {
+                Properties properties = new Properties();
+                AssetManager assetManager = getApplicationContext().getAssets();
+                InputStream inputStream = assetManager.open("config.properties");
+                properties.load(inputStream);
+                String url = properties.getProperty("ProxyUrl");
+                String username = properties.getProperty("Username");
+                String password = properties.getProperty("Password");
+
+                BrilleappenClient client = new BrilleappenClient(url, username, password);
+                client.sendFile(new File(data.getStringExtra("path")), "d859ba64-c730-44fa-bb00-d2837e41720d", instaShare);
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                Log.e(TAG, e.getMessage());
+            }
         }
         else if (requestCode == RECORD_VIDEO_CAPTURE_REQUEST && resultCode == RESULT_OK) {
             Log.i(TAG, "Received video: " + data.getStringExtra("path"));
