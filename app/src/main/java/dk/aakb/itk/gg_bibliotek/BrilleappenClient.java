@@ -1,30 +1,46 @@
 package dk.aakb.itk.gg_bibliotek;
 
+import android.os.AsyncTask;
 import android.util.Base64;
 import android.util.Log;
 
 import java.io.*;
 import java.net.*;
 
-public class BrilleappenClient {
+public class BrilleappenClient extends AsyncTask<String, Void, Boolean> {
     private static final String TAG = "Brilleappen";
 
     private String url;
     private String username;
     private String password;
+    private File file;
+    private String eventId;
+    private boolean share;
 
-    public BrilleappenClient(String url, String username, String password) {
+    public BrilleappenClient(String url, String username, String password, File file, String eventId, boolean share) {
         this.url = url;
         this.username = username;
         this.password = password;
+        this.file = file;
+        this.eventId = eventId;
+        this.share = share;
     }
 
-    public void sendFile(File file, String eventId, boolean share) {
+    protected Boolean doInBackground(String... strings) {
+        sendFile();
+        return true;
+    }
+
+    protected void onPostExecute(Boolean result) {
+        // TODO: check this.exception
+        // TODO: do something with the feed
+    }
+
+    public void sendFile() {
         try {
             String mimeType = URLConnection.guessContentTypeFromName(file.getName());
-            String nShare = (share ?  "yes" : "no");
 
-            URL url = new URL(this.url + "brilleappen/event/" + eventId + "/file?type=" + mimeType + "&share=" + nShare);
+            URL url = new URL(this.url + "brilleappen/event/" + eventId + "/file?type=" + mimeType + "&share=" + (share ?  "yes" : "no"));
 
             HttpURLConnection connection = (HttpURLConnection)url.openConnection();
 

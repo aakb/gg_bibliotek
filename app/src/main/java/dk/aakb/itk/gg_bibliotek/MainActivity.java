@@ -368,8 +368,7 @@ public class MainActivity extends Activity {
                 String username = properties.getProperty("Username");
                 String password = properties.getProperty("Password");
 
-                BrilleappenClient client = new BrilleappenClient(url, username, password);
-                client.sendFile(new File(data.getStringExtra("path")), "d859ba64-c730-44fa-bb00-d2837e41720d", instaShare);
+                new BrilleappenClient(url, username, password, new File(data.getStringExtra("path")), "d859ba64-c730-44fa-bb00-d2837e41720d", instaShare).execute("");
             }
             catch (Exception e) {
                 e.printStackTrace();
