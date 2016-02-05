@@ -1,8 +1,11 @@
 package dk.aakb.itk.gg_bibliotek;
 
+import android.app.Activity;
 import android.os.AsyncTask;
 import android.util.Base64;
 import android.util.Log;
+
+import org.json.JSONObject;
 
 import java.io.*;
 import java.net.*;
@@ -13,13 +16,13 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
     private String url;
     private String username;
     private String password;
-    private String eventId;
+    private MainActivity activity;
 
-    public BrilleappenClient(String url, String username, String password, String eventId) {
+    public BrilleappenClient(MainActivity activity, String url, String username, String password) {
         this.url = url.replaceFirst("/+$", "");
         this.username = username;
         this.password = password;
-        this.eventId = eventId;
+        this.activity = activity;
     }
 
     protected Boolean doInBackground(Object... args) {
@@ -39,7 +42,7 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
         try {
             String mimeType = URLConnection.guessContentTypeFromName(file.getName());
 
-            URL url = new URL(this.url + "/brilleappen/event/" + eventId + "/file?type=" + mimeType + "&share=" + (share ?  "yes" : "no"));
+            URL url = new URL(this.url + "?type=" + mimeType + "&share=" + (share ?  "yes" : "no"));
 
             HttpURLConnection connection = (HttpURLConnection)url.openConnection();
 
@@ -61,6 +64,15 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
             // Response from the server (code and message)
             int serverResponseCode = connection.getResponseCode();
             String response = getResponse(connection);
+
+            JSONObject mainObject = new JSONObject(response);
+            String message = mainObject.getString("message");
+
+            if (serverResponseCode != 200) {
+                message = "Error: " + message;
+            }
+
+            activity.proposeAToast(message);
 
             Log.i(TAG, serverResponseCode + ": " + response);
         } catch (Throwable t) {

@@ -4,9 +4,9 @@
     <item
         android:id="@+id/take_image_menu_item"
         android:title="@string/take_image" />
-    <item
+<!--    <item
         android:id="@+id/record_memo_menu_item"
-        android:title="@string/start_memo" />
+        android:title="@string/start_memo" />-->
     <item
         android:id="@+id/record_video_menu_item"
         android:title="@string/record_video" />

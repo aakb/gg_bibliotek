@@ -4,6 +4,7 @@
     <string name="progress_image">Images</string>
     <string name="progress_videos">Videos</string>
     <string name="event">Event: </string>
+    <string name="init_event">Open menu to init event</string>
     <string name="no_media_files">No media files</string>
     <plurals name="uploading_n_files">
         <item quantity="one">Uploading 1 file</item>
@@ -11,6 +12,8 @@
     </plurals>
     <string name="progress_memos">Memos</string>
     <string name="recording_memo">Recording memo</string>
+    <string name="hashtags_twitter">Twitter: </string>
+    <string name="hashtags_instagram">Instagram: </string>
 
     <string name="voice_command_start_program">Start event program</string>
 
