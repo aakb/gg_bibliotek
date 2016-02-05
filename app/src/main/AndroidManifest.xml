@@ -53,15 +53,6 @@
                 android:value="dk.aakb.itk.gg_bibliotek.MainActivity" />
         </activity>
         <activity
-            android:name="dk.aakb.itk.gg_bibliotek.MemoActivity"
-            android:label="@string/app_name"
-            android:parentActivityName="dk.aakb.itk.gg_bibliotek.MainActivity"
-            android:screenOrientation="landscape">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="dk.aakb.itk.gg_bibliotek.MainActivity" />
-        </activity>
-        <activity
             android:name="dk.aakb.itk.gg_bibliotek.QRActivity"
             android:label="@string/app_name"
             android:parentActivityName="dk.aakb.itk.gg_bibliotek.MainActivity"

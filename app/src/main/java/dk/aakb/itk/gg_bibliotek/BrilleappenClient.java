@@ -72,7 +72,7 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
                 message = "Error: " + message;
             }
 
-            activity.proposeAToast(message);
+            //activity.proposeAToast(message);
 
             Log.i(TAG, serverResponseCode + ": " + response);
         } catch (Throwable t) {

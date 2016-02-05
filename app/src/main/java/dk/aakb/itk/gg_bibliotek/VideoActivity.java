@@ -43,6 +43,7 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
 
     private AudioManager audioManager;
     private GestureDetector gestureDetector;
+    private TextView textField;
 
     /**
      * On create.
@@ -62,6 +63,10 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
         setContentView(R.layout.activity_camera_video);
 
         durationText = (TextView) findViewById(R.id.text_camera_duration);
+
+        textField = (TextView) findViewById(R.id.text_camera_helptext);
+
+        textField.setText("Tap to stop recording");
 
         if (!checkCameraHardware(this)) {
             Log.i(TAG, "no camera");

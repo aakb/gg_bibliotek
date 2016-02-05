@@ -11,6 +11,7 @@ import android.os.Environment;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.Window;
 import android.webkit.URLUtil;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -41,15 +42,15 @@ public class MainActivity extends Activity {
     private static final int TAKE_PICTURE_REQUEST = 101;
     private static final int RECORD_VIDEO_CAPTURE_REQUEST = 102;
     private static final int SCAN_EVENT_REQUEST = 103;
-    private static final int RECORD_MEMO_REQUEST = 104;
     private static final String STATE_VIDEOS = "videos";
     private static final String STATE_PICTURES = "pictures";
     private static final String STATE_EVENT = "url";
-    private static final String STATE_MEMOS = "memos";
+    private static final String STATE_EVENT_NAME = "event_name";
+    private static final String STATE_EVENT_TWITTER_CAPTION = "event_twitter_caption";
+    private static final String STATE_EVENT_INSTAGRAM_CAPTION = "event_instagram_caption";
 
     private ArrayList<String> imagePaths = new ArrayList<>();
     private ArrayList<String> videoPaths = new ArrayList<>();
-    private ArrayList<String> memoPaths = new ArrayList<>();
 
     private String url = null;
     BrilleappenClient client;
@@ -67,8 +68,10 @@ public class MainActivity extends Activity {
         // Save the user's current game state
         savedInstanceState.putStringArrayList(STATE_VIDEOS, videoPaths);
         savedInstanceState.putStringArrayList(STATE_PICTURES, imagePaths);
-        savedInstanceState.putStringArrayList(STATE_MEMOS, memoPaths);
         savedInstanceState.putString(STATE_EVENT, url);
+        savedInstanceState.putString(STATE_EVENT_NAME, eventName);
+        savedInstanceState.putString(STATE_EVENT_TWITTER_CAPTION, captionTwitter);
+        savedInstanceState.putString(STATE_EVENT_INSTAGRAM_CAPTION, captionInstagram);
 
         // Always call the superclass so it can save the view hierarchy state
         super.onSaveInstanceState(savedInstanceState);
@@ -87,6 +90,7 @@ public class MainActivity extends Activity {
         // window feature, be sure to request this before
         // setContentView() is called
         getWindow().requestFeature(WindowUtils.FEATURE_VOICE_COMMANDS);
+        getWindow().requestFeature(Window.FEATURE_OPTIONS_PANEL);
 
         // Get properties
         Properties properties = new Properties();
@@ -109,8 +113,10 @@ public class MainActivity extends Activity {
             // Restore state members from saved instance
             imagePaths = savedInstanceState.getStringArrayList(STATE_PICTURES);
             videoPaths = savedInstanceState.getStringArrayList(STATE_VIDEOS);
-            memoPaths = savedInstanceState.getStringArrayList(STATE_MEMOS);
             url = savedInstanceState.getString(STATE_EVENT);
+            eventName = savedInstanceState.getString(STATE_EVENT_NAME);
+            captionInstagram = savedInstanceState.getString(STATE_EVENT_INSTAGRAM_CAPTION);
+            captionTwitter = savedInstanceState.getString(STATE_EVENT_TWITTER_CAPTION);
         } else {
             Log.i(TAG, "Restoring state");
 
@@ -119,6 +125,8 @@ public class MainActivity extends Activity {
         }
 
         if (url != null) {
+            client = new BrilleappenClient(this, url, username, password);
+
             // Set the main activity view.
             setContentView(R.layout.activity_layout);
 
@@ -148,7 +156,8 @@ public class MainActivity extends Activity {
      */
     @Override
     public boolean onCreatePanelMenu(int featureId, Menu menu) {
-        if (featureId == WindowUtils.FEATURE_VOICE_COMMANDS) {
+        if (featureId == WindowUtils.FEATURE_VOICE_COMMANDS ||
+                featureId == Window.FEATURE_OPTIONS_PANEL) {
             if (url != null) {
                 getMenuInflater().inflate(R.menu.main, menu);
             } else {
@@ -190,7 +199,8 @@ public class MainActivity extends Activity {
      */
     @Override
     public boolean onMenuItemSelected(int featureId, MenuItem item) {
-        if (featureId == WindowUtils.FEATURE_VOICE_COMMANDS) {
+        if (featureId == WindowUtils.FEATURE_VOICE_COMMANDS ||
+                featureId == Window.FEATURE_OPTIONS_PANEL) {
             switch (item.getItemId()) {
                 case R.id.take_image_menu_item:
                     Log.i(TAG, "menu: take before image");
@@ -204,12 +214,6 @@ public class MainActivity extends Activity {
                     recordVideo();
 
                     break;
-/*                case R.id.record_memo_menu_item:
-                    Log.i(TAG, "menu: record memo");
-
-                    recordMemo();
-
-                    break;*/
                 case R.id.confirm_cancel:
                     Log.i(TAG, "menu: Confirm: cancel and exit");
 
@@ -240,20 +244,11 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * Launch the record memo intent.
-     */
-    private void recordMemo() {
-        Intent intent = new Intent(this, MemoActivity.class);
-        intent.putExtra("FILE_PREFIX", url);
-        startActivityForResult(intent, RECORD_MEMO_REQUEST);
-    }
-
-    /**
      * Launch the image capture intent.
      */
     private void takePicture() {
         Intent intent = new Intent(this, CameraActivity.class);
-        intent.putExtra("FILE_PREFIX", url);
+        intent.putExtra("FILE_PREFIX", "");
         startActivityForResult(intent, TAKE_PICTURE_REQUEST);
     }
 
@@ -262,7 +257,7 @@ public class MainActivity extends Activity {
      */
     private void recordVideo() {
         Intent intent = new Intent(this, VideoActivity.class);
-        intent.putExtra("FILE_PREFIX", url);
+        intent.putExtra("FILE_PREFIX", "");
         startActivityForResult(intent, RECORD_VIDEO_CAPTURE_REQUEST);
     }
 
@@ -272,14 +267,15 @@ public class MainActivity extends Activity {
     private void saveState() {
         String serializedVideoPaths = (new JSONArray(videoPaths)).toString();
         String serializedImagePaths = (new JSONArray(imagePaths)).toString();
-        String serializedMemoPaths = (new JSONArray(memoPaths)).toString();
 
         SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(STATE_VIDEOS, serializedVideoPaths);
         editor.putString(STATE_PICTURES, serializedImagePaths);
-        editor.putString(STATE_MEMOS, serializedMemoPaths);
         editor.putString(STATE_EVENT, url);
+        editor.putString(STATE_EVENT_NAME, eventName);
+        editor.putString(STATE_EVENT_INSTAGRAM_CAPTION, captionInstagram);
+        editor.putString(STATE_EVENT_TWITTER_CAPTION, captionTwitter);
         editor.apply();
     }
 
@@ -299,13 +295,14 @@ public class MainActivity extends Activity {
     private void restoreState() {
         SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
         url = sharedPref.getString(STATE_EVENT, null);
+        eventName = sharedPref.getString(STATE_EVENT_NAME, null);
+        captionInstagram = sharedPref.getString(STATE_EVENT_INSTAGRAM_CAPTION, null);
+        captionTwitter = sharedPref.getString(STATE_EVENT_TWITTER_CAPTION, null);
         String serializedVideoPaths = sharedPref.getString(STATE_VIDEOS, "[]");
         String serializedImagePaths = sharedPref.getString(STATE_PICTURES, "[]");
-        String serializedMemoPaths = sharedPref.getString(STATE_MEMOS, "[]");
 
         imagePaths = new ArrayList<>();
         videoPaths = new ArrayList<>();
-        memoPaths = new ArrayList<>();
 
         try {
             JSONArray jsonArray = new JSONArray(serializedVideoPaths);
@@ -317,19 +314,14 @@ public class MainActivity extends Activity {
             for (int i = 0; i < jsonArray.length(); i++) {
                 imagePaths.add(jsonArray.getString(i));
             }
-
-            jsonArray = new JSONArray(serializedMemoPaths);
-            for (int i = 0; i < jsonArray.length(); i++) {
-                memoPaths.add(jsonArray.getString(i));
-            }
         } catch (JSONException e) {
             // ignore
         }
 
         Log.i(TAG, "Restored url: " + url);
+        Log.i(TAG, "Restored name: " + eventName);
         Log.i(TAG, "Restored imagePaths: " + imagePaths);
         Log.i(TAG, "Restored videoPaths: " + videoPaths);
-        Log.i(TAG, "Restored memoPaths: " + memoPaths);
     }
 
     /**
@@ -395,56 +387,31 @@ public class MainActivity extends Activity {
             videoPaths.add(data.getStringExtra("path"));
             saveState();
             updateUI();
-        } else if (requestCode == RECORD_MEMO_REQUEST && resultCode == RESULT_OK) {
-            Log.i(TAG, "Received memo: " + data.getStringExtra("path"));
-
-            memoPaths.add(data.getStringExtra("path"));
-            saveState();
-            updateUI();
         } else if (requestCode == SCAN_EVENT_REQUEST && resultCode == RESULT_OK) {
             Log.i(TAG, "Received url QR: " + data.getStringExtra("result"));
 
             String result = data.getStringExtra("result");
 
-            if (URLUtil.isValidUrl(result)) {
-                try {
-                    HttpClient httpclient = new DefaultHttpClient();
-                    HttpResponse response = httpclient.execute(new HttpGet(result));
-                    StatusLine statusLine = response.getStatusLine();
-                    if (statusLine.getStatusCode() == HttpStatus.SC_OK){
-                        ByteArrayOutputStream out = new ByteArrayOutputStream();
-                        response.getEntity().writeTo(out);
+            try {
+                JSONObject jResult = new JSONObject(result);
+                JSONObject caption = jResult.getJSONObject("caption");
 
-                        JSONObject mainObject = new JSONObject(out.toString());
-                        out.close();
+                url = jResult.getString("url");
+                eventName = jResult.getString("title");
+                captionTwitter = caption.getString("twitter");
+                captionInstagram = caption.getString("instagram");
 
-                        eventName = mainObject.getString("title");
-                        url = mainObject.getString("url");
-
-                        JSONObject caption = mainObject.getJSONObject("caption");
-
-                        captionTwitter = caption.getString("twitter");
-                        captionInstagram = caption.getString("instagram");
-
-                        client = new BrilleappenClient(this, url, username, password);
-
-                        // Set the main activity view.
-                        setContentView(R.layout.activity_layout);
-
-                        saveState();
-                        updateUI();
-                    } else {
-                        // Closes the connection.
-                        response.getEntity().getContent().close();
-                        throw new IOException(statusLine.getReasonPhrase());
-                    }
-                }
-                catch (Exception e) {
-                    Log.e(TAG, e.getMessage());
-                }
-            } else {
-                proposeAToast("Invalid url: " + result + ". Make sure you have a correct QR code.");
+                client = new BrilleappenClient(this, url, username, password);
             }
+            catch (JSONException e) {
+                Log.e(TAG, e.getMessage());
+            }
+
+            // Set the main activity view.
+            setContentView(R.layout.activity_layout);
+
+            saveState();
+            updateUI();
         }
 
         super.onActivityResult(requestCode, resultCode, data);
@@ -477,10 +444,7 @@ public class MainActivity extends Activity {
 
         updateTextField(R.id.videoNumber, String.valueOf(videoPaths.size()), videoPaths.size() > 0 ? Color.WHITE : null);
         updateTextField(R.id.videoLabel, null, videoPaths.size() > 0 ? Color.WHITE : null);
-/*
-        updateTextField(R.id.memoNumber, String.valueOf(memoPaths.size()), memoPaths.size() > 0 ? Color.WHITE : null);
-        updateTextField(R.id.memoLabel, null, memoPaths.size() > 0 ? Color.WHITE : null);
-*/
+
         updateTextField(R.id.eventIdentifier, eventName, eventName != null ? Color.WHITE : null);
         updateTextField(R.id.instagramTextView, captionInstagram, captionInstagram != null ? Color.WHITE : null);
         updateTextField(R.id.twitterTextView, captionTwitter, captionTwitter != null ? Color.WHITE : null);
@@ -489,7 +453,7 @@ public class MainActivity extends Activity {
     /**
      * Send a toast
      *
-     * @param message
+     * @param message Message to display
      */
     public void proposeAToast(String message) {
         Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
