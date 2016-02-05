@@ -1,7 +1,6 @@
 package dk.aakb.itk.gg_bibliotek;
 
 import android.app.Activity;
-import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -13,7 +12,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.webkit.URLUtil;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -408,52 +406,44 @@ public class MainActivity extends Activity {
 
             String result = data.getStringExtra("result");
 
-            try {
-                JSONObject mainObject = new JSONObject(result);
-                String qrUrl = mainObject.getString("url");
+            if (URLUtil.isValidUrl(result)) {
+                try {
+                    HttpClient httpclient = new DefaultHttpClient();
+                    HttpResponse response = httpclient.execute(new HttpGet(result));
+                    StatusLine statusLine = response.getStatusLine();
+                    if (statusLine.getStatusCode() == HttpStatus.SC_OK){
+                        ByteArrayOutputStream out = new ByteArrayOutputStream();
+                        response.getEntity().writeTo(out);
 
-                if (URLUtil.isValidUrl(qrUrl)) {
-                    url = qrUrl;
+                        JSONObject mainObject = new JSONObject(out.toString());
+                        out.close();
 
-                    try {
-                        HttpClient httpclient = new DefaultHttpClient();
-                        HttpResponse response = httpclient.execute(new HttpGet(url));
-                        StatusLine statusLine = response.getStatusLine();
-                        if (statusLine.getStatusCode() == HttpStatus.SC_OK){
-                            ByteArrayOutputStream out = new ByteArrayOutputStream();
-                            response.getEntity().writeTo(out);
-                            String responseString = out.toString();
-                            out.close();
-                        } else{
-                            //Closes the connection.
-                            response.getEntity().getContent().close();
-                            throw new IOException(statusLine.getReasonPhrase());
-                        }
+                        eventName = mainObject.getString("title");
+                        url = mainObject.getString("url");
+
+                        JSONObject caption = mainObject.getJSONObject("caption");
+
+                        captionTwitter = caption.getString("twitter");
+                        captionInstagram = caption.getString("instagram");
+
+                        client = new BrilleappenClient(this, url, username, password);
+
+                        // Set the main activity view.
+                        setContentView(R.layout.activity_layout);
+
+                        saveState();
+                        updateUI();
+                    } else {
+                        // Closes the connection.
+                        response.getEntity().getContent().close();
+                        throw new IOException(statusLine.getReasonPhrase());
                     }
-                    catch (Exception e) {
-
-                    }
-
-                    eventName = mainObject.getString("title");
-
-                    JSONObject caption = mainObject.getJSONObject("caption");
-
-                    captionTwitter = caption.getString("twitter");
-                    captionInstagram = caption.getString("instagram");
-
-                    client = new BrilleappenClient(this, url, username, password);
-
-                    // Set the main activity view.
-                    setContentView(R.layout.activity_layout);
-
-                    saveState();
-                    updateUI();
-                } else {
-                    proposeAToast("Invalid url: " + result + ". Make sure you have a correct QR code.");
                 }
-            } catch (JSONException e) {
-                proposeAToast("Invalid event QR code.");
-                Log.e(TAG, e.getMessage());
+                catch (Exception e) {
+                    Log.e(TAG, e.getMessage());
+                }
+            } else {
+                proposeAToast("Invalid url: " + result + ". Make sure you have a correct QR code.");
             }
         }
 
