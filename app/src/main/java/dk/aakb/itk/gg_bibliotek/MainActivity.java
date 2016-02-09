@@ -44,6 +44,7 @@ public class MainActivity extends Activity {
     private static final int SCAN_EVENT_REQUEST = 103;
     private static final String STATE_VIDEOS = "videos";
     private static final String STATE_PICTURES = "pictures";
+
     private static final String STATE_EVENT = "url";
     private static final String STATE_EVENT_NAME = "event_name";
     private static final String STATE_EVENT_TWITTER_CAPTION = "event_twitter_caption";
@@ -379,6 +380,8 @@ public class MainActivity extends Activity {
             imagePaths.add(data.getStringExtra("path"));
             saveState();
             updateUI();
+
+            client = new BrilleappenClient(this, url, username, password);
 
             client.execute(new File(data.getStringExtra("path")), instaShare);
         } else if (requestCode == RECORD_VIDEO_CAPTURE_REQUEST && resultCode == RESULT_OK) {
