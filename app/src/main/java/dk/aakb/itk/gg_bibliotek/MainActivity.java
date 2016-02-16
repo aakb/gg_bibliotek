@@ -194,6 +194,10 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
 
             getMenuInflater().inflate(R.menu.main, menu);
 
+            for (int i = 0; i < contacts.size(); i++) {
+                menu.findItem(R.id.contacts_menu_item).getSubMenu().add(R.id.main_menu_group_main, R.id.contacts_menu_item, i, contacts.get(i).getName());
+            }
+
             panelMenu = menu;
 
             updatePanelMenu();
@@ -209,6 +213,12 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
     public boolean onPreparePanel(int featureId, View view, Menu menu) {
         if (featureId == WindowUtils.FEATURE_VOICE_COMMANDS ||
                 featureId == Window.FEATURE_OPTIONS_PANEL) {
+
+            if (menu.findItem(R.id.contacts_menu_item).getSubMenu().size() <= 0) {
+                for (int i = 0; i < contacts.size(); i++) {
+                    menu.findItem(R.id.contacts_menu_item).getSubMenu().add(R.id.main_menu_group_main, R.id.contacts_menu_item, i, contacts.get(i).getName());
+                }
+            }
 
             updatePanelMenu();
         }
@@ -259,8 +269,14 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
                     finish();
 
                     break;
-                case R.id.make_call_menu_item:
+                case R.id.contacts_menu_item:
                     Log.i(TAG, "menu: make call");
+
+                    Log.i(TAG, contacts.get(item.getOrder()).toString());
+
+                    Contact contact = contacts.get(item.getOrder());
+
+                    makeCall(contact.getPhoneNumber());
 
                     break;
                 case R.id.scan_event_menu_item:
@@ -382,16 +398,17 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
             // ignore
         }
 
-        try {
-            ByteArrayInputStream bi = new ByteArrayInputStream(serializedContacts.getBytes("ISO-8859-1"));
-            ObjectInputStream si = new ObjectInputStream(bi);
-            contacts = (ArrayList<Contact>) si.readObject();
-            Log.i(TAG, contacts.toString());
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            Log.e(TAG, e.getMessage());
-            finish();
+        if (!serializedContacts.equals("[]")) {
+            try {
+                ByteArrayInputStream bi = new ByteArrayInputStream(serializedContacts.getBytes("ISO-8859-1"));
+                ObjectInputStream si = new ObjectInputStream(bi);
+                contacts = (ArrayList<Contact>) si.readObject();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                Log.e(TAG, e.getMessage());
+                finish();
+            }
         }
 
         Log.i(TAG, "Restored url: " + url);
@@ -481,6 +498,11 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
             try {
                 JSONObject jResult = new JSONObject(result);
                 eventUrl = jResult.getString("url");
+
+                selectedMenu = MENU_MAIN;
+
+                updatePanelMenu();
+
                 client = new BrilleappenClient(this, eventUrl, username, password);
                 client.execute("getEvent");
             }
@@ -570,10 +592,6 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
                 @Override
                 public void run() {
                     if (url != null) {
-                        selectedMenu = MENU_MAIN;
-
-                        updatePanelMenu();
-
                         // Set the main activity view.
                         setContentView(R.layout.activity_layout);
                     }
