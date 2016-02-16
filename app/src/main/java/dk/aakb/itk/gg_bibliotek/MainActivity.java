@@ -11,11 +11,14 @@ import android.os.Environment;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.glass.touchpad.Gesture;
+import com.google.android.glass.touchpad.GestureDetector;
 import com.google.android.glass.view.WindowUtils;
 
 import org.json.JSONArray;
@@ -27,7 +30,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Properties;
 
-public class MainActivity extends Activity implements BrilleappenClientListener {
+public class MainActivity extends Activity implements BrilleappenClientListener,  GestureDetector.BaseListener  {
     public static final String FILE_DIRECTORY = "Bibliotek";
 
     private static final String TAG = "bibliotek MainActivity";
@@ -59,6 +62,9 @@ public class MainActivity extends Activity implements BrilleappenClientListener 
     String captionInstagram;
 
     int selectedMenu = 0;
+
+    private GestureDetector gestureDetector;
+
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
@@ -146,6 +152,21 @@ public class MainActivity extends Activity implements BrilleappenClientListener 
         getDirectoryListing(f);
 
         Log.i(TAG, "------------");
+
+        gestureDetector = new GestureDetector(this).setBaseListener(this);
+    }
+
+    public boolean onGenericMotionEvent(MotionEvent event) {
+        return gestureDetector.onMotionEvent(event);
+    }
+
+    public boolean onGesture(Gesture gesture) {
+        if (Gesture.TAP.equals(gesture)) {
+            openOptionsMenu();
+
+            return true;
+        }
+        return false;
     }
 
     /**
