@@ -64,6 +64,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
     int selectedMenu = 0;
 
     private GestureDetector gestureDetector;
+    private Menu panelMenu;
 
 
     @Override
@@ -183,6 +184,10 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
 
             getMenuInflater().inflate(R.menu.main, menu);
 
+            panelMenu = menu;
+
+            updatePanelMenu();
+
             return true;
         }
 
@@ -194,22 +199,19 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
     public boolean onPreparePanel(int featureId, View view, Menu menu) {
         if (featureId == WindowUtils.FEATURE_VOICE_COMMANDS ||
                 featureId == Window.FEATURE_OPTIONS_PANEL) {
-            if (selectedMenu == MENU_MAIN) {
-                menu.setGroupVisible(R.id.main_menu_group_main, true);
-                menu.setGroupVisible(R.id.main_menu_group_start, false);
-            }
-            else if (selectedMenu == MENU_START){
-                menu.setGroupVisible(R.id.main_menu_group_main, false);
-                menu.setGroupVisible(R.id.main_menu_group_start, true);
-            }
+
+            updatePanelMenu();
         }
 
         return super.onPreparePanel(featureId, view, menu);
     }
 
-    @Override
-    public void onPanelClosed(int featureId, Menu menu) {
-        super.onPanelClosed(featureId, menu);
+    /**
+     * Update what menu is displayed.
+     */
+    public void updatePanelMenu() {
+        panelMenu.setGroupVisible(R.id.main_menu_group_main, selectedMenu == MENU_MAIN);
+        panelMenu.setGroupVisible(R.id.main_menu_group_start, selectedMenu == MENU_START);
     }
 
     /**
@@ -442,7 +444,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
             String result = data.getStringExtra("result");
 
             try {
-                selectedMenu = MENU_MAIN;
+                //selectedMenu = MENU_MAIN;
 
                 JSONObject jResult = new JSONObject(result);
                 eventUrl = jResult.getString("url");
@@ -525,6 +527,10 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
                 @Override
                 public void run() {
                     if (url != null) {
+                        selectedMenu = MENU_MAIN;
+
+                        updatePanelMenu();
+
                         // Set the main activity view.
                         setContentView(R.layout.activity_layout);
                     }
