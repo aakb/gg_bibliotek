@@ -10,4 +10,7 @@
     <item
         android:id="@+id/finish_menu_item"
         android:title="@string/finish" />
+    <item
+        android:id="@+id/make_call_menu_item"
+        android:title="@string/call"/>
 </menu>

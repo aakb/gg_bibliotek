@@ -12,30 +12,21 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Window;
-import android.webkit.URLUtil;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.glass.view.WindowUtils;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.StatusLine;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Properties;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements BrilleappenClientListener {
     public static final String FILE_DIRECTORY = "Bibliotek";
 
     private static final String TAG = "bibliotek MainActivity";
@@ -59,6 +50,7 @@ public class MainActivity extends Activity {
     private String password;
 
     String eventName;
+    String eventUrl;
     String captionTwitter;
     String captionInstagram;
 
@@ -126,8 +118,6 @@ public class MainActivity extends Activity {
         }
 
         if (url != null) {
-            client = new BrilleappenClient(this, url, username, password);
-
             // Set the main activity view.
             setContentView(R.layout.activity_layout);
 
@@ -224,6 +214,10 @@ public class MainActivity extends Activity {
                     finish();
 
                     break;
+                case R.id.make_call_menu_item:
+                    Log.i(TAG, "menu: make call");
+
+                    break;
                 case R.id.scan_event_menu_item:
                     Intent scanEventIntent = new Intent(this, QRActivity.class);
                     startActivityForResult(scanEventIntent, SCAN_EVENT_REQUEST);
@@ -260,6 +254,18 @@ public class MainActivity extends Activity {
         Intent intent = new Intent(this, VideoActivity.class);
         intent.putExtra("FILE_PREFIX", "");
         startActivityForResult(intent, RECORD_VIDEO_CAPTURE_REQUEST);
+    }
+
+    /**
+     * Call a phone number with an intent
+     *
+     * @param phoneNumber
+     */
+    private void makeCall(String phoneNumber) {
+        Intent localIntent = new Intent();
+        localIntent.putExtra("com.google.glass.extra.PHONE_NUMBER", phoneNumber);
+        localIntent.setAction("com.google.glass.action.CALL_DIAL");
+        sendBroadcast(localIntent);
     }
 
     /*
@@ -378,18 +384,25 @@ public class MainActivity extends Activity {
 
             boolean instaShare = data.getBooleanExtra("instaShare", false);
             imagePaths.add(data.getStringExtra("path"));
+
             saveState();
             updateUI();
 
+            // Send the file
             client = new BrilleappenClient(this, url, username, password);
-
-            client.execute(new File(data.getStringExtra("path")), instaShare);
+            client.execute("sendFile", new File(data.getStringExtra("path")), instaShare);
         } else if (requestCode == RECORD_VIDEO_CAPTURE_REQUEST && resultCode == RESULT_OK) {
             Log.i(TAG, "Received video: " + data.getStringExtra("path"));
 
+            boolean instaShare = data.getBooleanExtra("instaShare", false);
             videoPaths.add(data.getStringExtra("path"));
+
             saveState();
             updateUI();
+
+            // Send the file
+            client = new BrilleappenClient(this, url, username, password);
+            client.execute("sendFile", new File(data.getStringExtra("path")), instaShare);
         } else if (requestCode == SCAN_EVENT_REQUEST && resultCode == RESULT_OK) {
             Log.i(TAG, "Received url QR: " + data.getStringExtra("result"));
 
@@ -397,14 +410,9 @@ public class MainActivity extends Activity {
 
             try {
                 JSONObject jResult = new JSONObject(result);
-                JSONObject caption = jResult.getJSONObject("caption");
-
-                url = jResult.getString("url");
-                eventName = jResult.getString("title");
-                captionTwitter = caption.getString("twitter");
-                captionInstagram = caption.getString("instagram");
-
-                client = new BrilleappenClient(this, url, username, password);
+                eventUrl = jResult.getString("url");
+                client = new BrilleappenClient(this, eventUrl, username, password);
+                client.execute("getEvent");
             }
             catch (JSONException e) {
                 Log.e(TAG, e.getMessage());
@@ -460,5 +468,45 @@ public class MainActivity extends Activity {
      */
     public void proposeAToast(String message) {
         Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void getEventDone(BrilleappenClient client, JSONObject result) {
+        try {
+            if (result.has("caption")) {
+                JSONObject caption = result.getJSONObject("caption");
+                captionTwitter = caption.getString("twitter");
+                captionInstagram = caption.getString("instagram");
+            }
+            url = result.getString("url");
+            eventName = result.getString("title");
+
+            // Update the UI
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    updateUI();
+                }
+            });
+            saveState();
+        }
+        catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+        }
+    }
+
+    @Override
+    public void sendFileDone(BrilleappenClient client, JSONObject result) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                proposeAToast("File delivered!");
+            }
+        });
+    }
+
+    @Override
+    public void notifyFileDone(BrilleappenClient client, JSONObject result) {
+        // Not implemented
     }
 }

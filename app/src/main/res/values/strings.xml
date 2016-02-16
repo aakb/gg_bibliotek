@@ -22,4 +22,5 @@
     <string name="confirm_cancel">Yes</string>
     <string name="abort_cancel">No</string>
     <string name="scan_event">Scan event</string>
+    <string name="call">Make call</string>
 </resources>

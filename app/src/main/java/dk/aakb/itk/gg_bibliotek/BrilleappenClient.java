@@ -1,10 +1,10 @@
 package dk.aakb.itk.gg_bibliotek;
 
-import android.app.Activity;
 import android.os.AsyncTask;
 import android.util.Base64;
 import android.util.Log;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.*;
@@ -16,26 +16,61 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
     private String url;
     private String username;
     private String password;
-    private MainActivity activity;
+    private BrilleappenClientListener listener;
 
-    public BrilleappenClient(MainActivity activity, String url, String username, String password) {
+    public BrilleappenClient(BrilleappenClientListener listener, String url, String username, String password) {
         this.url = url.replaceFirst("/+$", "");
         this.username = username;
         this.password = password;
-        this.activity = activity;
+        this.listener = listener;
     }
 
     protected Boolean doInBackground(Object... args) {
-        File file = (File)args[0];
-        boolean share = (boolean)args[1];
+        String action = (String)args[0];
 
-        sendFile(file, share);
+        switch (action) {
+            case "getEvent":
+                getEvent();
+                break;
+            case "sendFile":
+                File file = (File)args[1];
+                boolean share = (boolean)args[2];
+
+                sendFile(file, share);
+                break;
+            default:
+                break;
+        }
         return true;
     }
 
-    protected void onPostExecute(Boolean result) {
-        // TODO: check this.exception
-        // TODO: do something with the feed
+    public void getEvent() {
+        try {
+            URL url = new URL(this.url);
+            HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+
+            String authString = username + ":" + password;
+            String authStringEnc = Base64.encodeToString(authString.getBytes(), Base64.DEFAULT);
+
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Authorization", "Basic " + authStringEnc);
+            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+
+            String response = getResponse(connection);
+
+            JSONObject result = null;
+            try {
+                result = new JSONObject(response);
+            }
+            catch (JSONException e) {
+                Log.e(TAG, e.getMessage());
+            }
+
+            listener.getEventDone(this, result);
+        }
+        catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+        }
     }
 
     public void sendFile(File file, boolean share) {
@@ -66,13 +101,8 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
             String response = getResponse(connection);
 
             JSONObject mainObject = new JSONObject(response);
-            String message = mainObject.getString("message");
 
-            if (serverResponseCode != 200) {
-                message = "Error: " + message;
-            }
-
-            //activity.proposeAToast(message);
+            listener.sendFileDone(this, mainObject);
 
             Log.i(TAG, serverResponseCode + ": " + response);
         } catch (Throwable t) {
