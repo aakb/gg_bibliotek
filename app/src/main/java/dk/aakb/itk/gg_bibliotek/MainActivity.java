@@ -25,8 +25,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.StreamCorruptedException;
 import java.util.ArrayList;
 import java.util.Properties;
 
@@ -39,6 +45,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
     private static final int SCAN_EVENT_REQUEST = 103;
     private static final String STATE_VIDEOS = "videos";
     private static final String STATE_PICTURES = "pictures";
+    private static final String STATE_CONTACTS = "contacts";
 
     private static final String STATE_EVENT = "url";
     private static final String STATE_EVENT_NAME = "event_name";
@@ -79,6 +86,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
         savedInstanceState.putString(STATE_EVENT_NAME, eventName);
         savedInstanceState.putString(STATE_EVENT_TWITTER_CAPTION, captionTwitter);
         savedInstanceState.putString(STATE_EVENT_INSTAGRAM_CAPTION, captionInstagram);
+        savedInstanceState.putSerializable(STATE_CONTACTS, contacts);
 
         // Always call the superclass so it can save the view hierarchy state
         super.onSaveInstanceState(savedInstanceState);
@@ -124,6 +132,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
             eventName = savedInstanceState.getString(STATE_EVENT_NAME);
             captionInstagram = savedInstanceState.getString(STATE_EVENT_INSTAGRAM_CAPTION);
             captionTwitter = savedInstanceState.getString(STATE_EVENT_TWITTER_CAPTION);
+            contacts = (ArrayList<Contact>) savedInstanceState.getSerializable(STATE_CONTACTS);
         } else {
             Log.i(TAG, "Restoring state");
 
@@ -319,6 +328,16 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
         editor.putString(STATE_EVENT_NAME, eventName);
         editor.putString(STATE_EVENT_INSTAGRAM_CAPTION, captionInstagram);
         editor.putString(STATE_EVENT_TWITTER_CAPTION, captionTwitter);
+        try {
+            ByteArrayOutputStream bo = new ByteArrayOutputStream();
+            ObjectOutputStream so = new ObjectOutputStream(bo);
+            so.writeObject(contacts);
+            so.flush();
+            String serializedContacts = bo.toString("ISO-8859-1");
+            editor.putString(STATE_CONTACTS, serializedContacts);
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+        }
         editor.apply();
     }
 
@@ -343,9 +362,11 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
         captionTwitter = sharedPref.getString(STATE_EVENT_TWITTER_CAPTION, null);
         String serializedVideoPaths = sharedPref.getString(STATE_VIDEOS, "[]");
         String serializedImagePaths = sharedPref.getString(STATE_PICTURES, "[]");
+        String serializedContacts = sharedPref.getString(STATE_CONTACTS, "[]");
 
         imagePaths = new ArrayList<>();
         videoPaths = new ArrayList<>();
+        contacts = new ArrayList<>();
 
         try {
             JSONArray jsonArray = new JSONArray(serializedVideoPaths);
@@ -361,10 +382,23 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
             // ignore
         }
 
+        try {
+            ByteArrayInputStream bi = new ByteArrayInputStream(serializedContacts.getBytes("ISO-8859-1"));
+            ObjectInputStream si = new ObjectInputStream(bi);
+            contacts = (ArrayList<Contact>) si.readObject();
+            Log.i(TAG, contacts.toString());
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            Log.e(TAG, e.getMessage());
+            finish();
+        }
+
         Log.i(TAG, "Restored url: " + url);
         Log.i(TAG, "Restored name: " + eventName);
         Log.i(TAG, "Restored imagePaths: " + imagePaths);
         Log.i(TAG, "Restored videoPaths: " + videoPaths);
+        Log.i(TAG, "Restored contacts: " + contacts);
     }
 
     /**
