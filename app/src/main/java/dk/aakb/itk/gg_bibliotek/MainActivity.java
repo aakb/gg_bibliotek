@@ -151,7 +151,8 @@ public class MainActivity extends Activity implements BrilleappenClientListener 
                 featureId == Window.FEATURE_OPTIONS_PANEL) {
             if (url != null) {
                 getMenuInflater().inflate(R.menu.main, menu);
-            } else {
+            }
+            else {
                 getMenuInflater().inflate(R.menu.start, menu);
             }
 
@@ -172,7 +173,8 @@ public class MainActivity extends Activity implements BrilleappenClientListener 
     public boolean onCreateOptionsMenu(Menu menu) {
         if (url != null) {
             getMenuInflater().inflate(R.menu.main, menu);
-        } else {
+        }
+        else {
             getMenuInflater().inflate(R.menu.start, menu);
         }
 
@@ -259,7 +261,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener 
     /**
      * Call a phone number with an intent
      *
-     * @param phoneNumber
+     * @param phoneNumber The phone number to call.
      */
     private void makeCall(String phoneNumber) {
         Intent localIntent = new Intent();
@@ -417,12 +419,6 @@ public class MainActivity extends Activity implements BrilleappenClientListener 
             catch (JSONException e) {
                 Log.e(TAG, e.getMessage());
             }
-
-            // Set the main activity view.
-            setContentView(R.layout.activity_layout);
-
-            saveState();
-            updateUI();
         }
 
         super.onActivityResult(requestCode, resultCode, data);
@@ -473,22 +469,36 @@ public class MainActivity extends Activity implements BrilleappenClientListener 
     @Override
     public void getEventDone(BrilleappenClient client, JSONObject result) {
         try {
-            if (result.has("caption")) {
-                JSONObject caption = result.getJSONObject("caption");
-                captionTwitter = caption.getString("twitter");
-                captionInstagram = caption.getString("instagram");
+            Log.i(TAG, result.toString());
+
+            if (result.getJSONArray("field_gg_instagram_caption").length() > 0) {
+                captionInstagram = result.getJSONArray("field_gg_instagram_caption").getJSONObject(0).getString("value");
             }
-            url = result.getString("url");
-            eventName = result.getString("title");
+
+            if (result.getJSONArray("field_gg_twitter_caption").length() > 0) {
+                captionTwitter = result.getJSONArray("field_gg_twitter_caption").getJSONObject(0).getString("value");
+            }
+
+            if (result.getJSONArray("title").length() > 0) {
+                eventName = result.getJSONArray("title").getJSONObject(0).getString("value");
+            }
+
+            url = result.getString("add_file_url");
+
+            saveState();
 
             // Update the UI
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
+                    if (url != null) {
+                        // Set the main activity view.
+                        setContentView(R.layout.activity_layout);
+                    }
+
                     updateUI();
                 }
             });
-            saveState();
         }
         catch (Exception e) {
             Log.e(TAG, e.getMessage());
