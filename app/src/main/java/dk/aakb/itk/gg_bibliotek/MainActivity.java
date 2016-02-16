@@ -66,6 +66,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
     private GestureDetector gestureDetector;
     private Menu panelMenu;
 
+    private ArrayList<Contact> contacts = new ArrayList<>();
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
@@ -514,6 +515,16 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
 
             if (result.getJSONArray("title").length() > 0) {
                 eventName = result.getJSONArray("title").getJSONObject(0).getString("value");
+            }
+
+            if (result.getJSONArray("field_gg_contact_people").length() > 0) {
+                JSONArray jsonArray = result.getJSONArray("field_gg_contact_people");
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject o = (JSONObject) jsonArray.get(i);
+                    contacts.add(new Contact(o.getString("name"), o.getString("telephone")));
+                }
+
+                Log.i(TAG, contacts.toString());
             }
 
             url = result.getString("add_file_url");
