@@ -444,8 +444,6 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
             String result = data.getStringExtra("result");
 
             try {
-                //selectedMenu = MENU_MAIN;
-
                 JSONObject jResult = new JSONObject(result);
                 eventUrl = jResult.getString("url");
                 client = new BrilleappenClient(this, eventUrl, username, password);
