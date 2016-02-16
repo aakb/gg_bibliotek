@@ -1,16 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Use the constants defined in the ContextualMenus.Command enum-->
-    <item
-        android:id="@+id/take_image_menu_item"
-        android:title="@string/take_image" />
-    <item
-        android:id="@+id/record_video_menu_item"
-        android:title="@string/record_video" />
-    <item
-        android:id="@+id/finish_menu_item"
-        android:title="@string/finish" />
-    <item
-        android:id="@+id/make_call_menu_item"
-        android:title="@string/call"/>
+    <group
+        android:id="@+id/main_menu_group_main">
+        <item
+            android:id="@+id/take_image_menu_item"
+            android:title="@string/take_image" />
+        <item
+            android:id="@+id/record_video_menu_item"
+            android:title="@string/record_video" />
+        <item
+            android:id="@+id/finish_menu_item"
+            android:title="@string/finish" />
+        <item
+            android:id="@+id/make_call_menu_item"
+            android:title="@string/call"/>
+    </group>
+    <group
+        android:id="@+id/main_menu_group_start">
+        <item
+            android:id="@+id/scan_event_menu_item"
+            android:title="@string/scan_event" />
+        <item
+            android:id="@+id/cancel_menu_item"
+            android:title="@string/cancel">
+            <menu>
+                <item
+                    android:id="@+id/confirm_cancel"
+                    android:title="@string/confirm_cancel" />
+                <item
+                    android:id="@+id/abort_cancel"
+                    android:title="@string/abort_cancel" />
+            </menu>
+        </item>
+    </group>
 </menu>

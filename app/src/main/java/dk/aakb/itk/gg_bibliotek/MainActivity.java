@@ -11,6 +11,7 @@ import android.os.Environment;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.Window;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -41,6 +42,9 @@ public class MainActivity extends Activity implements BrilleappenClientListener 
     private static final String STATE_EVENT_TWITTER_CAPTION = "event_twitter_caption";
     private static final String STATE_EVENT_INSTAGRAM_CAPTION = "event_instagram_caption";
 
+    private static final int MENU_MAIN = 1;
+    private static final int MENU_START = 0;
+
     private ArrayList<String> imagePaths = new ArrayList<>();
     private ArrayList<String> videoPaths = new ArrayList<>();
 
@@ -53,6 +57,8 @@ public class MainActivity extends Activity implements BrilleappenClientListener 
     String eventUrl;
     String captionTwitter;
     String captionInstagram;
+
+    int selectedMenu = 0;
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
@@ -118,12 +124,16 @@ public class MainActivity extends Activity implements BrilleappenClientListener 
         }
 
         if (url != null) {
+            selectedMenu = MENU_MAIN;
+
             // Set the main activity view.
             setContentView(R.layout.activity_layout);
 
             updateUI();
         }
         else {
+            selectedMenu = MENU_START;
+
             // Set the main activity view.
             setContentView(R.layout.activity_layout_init);
         }
@@ -149,12 +159,8 @@ public class MainActivity extends Activity implements BrilleappenClientListener 
     public boolean onCreatePanelMenu(int featureId, Menu menu) {
         if (featureId == WindowUtils.FEATURE_VOICE_COMMANDS ||
                 featureId == Window.FEATURE_OPTIONS_PANEL) {
-            if (url != null) {
-                getMenuInflater().inflate(R.menu.main, menu);
-            }
-            else {
-                getMenuInflater().inflate(R.menu.start, menu);
-            }
+
+            getMenuInflater().inflate(R.menu.main, menu);
 
             return true;
         }
@@ -163,22 +169,26 @@ public class MainActivity extends Activity implements BrilleappenClientListener 
         return super.onCreatePanelMenu(featureId, menu);
     }
 
-    /**
-     * On create options menu.
-     *
-     * @param menu The menu to create
-     * @return boolean
-     */
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        if (url != null) {
-            getMenuInflater().inflate(R.menu.main, menu);
-        }
-        else {
-            getMenuInflater().inflate(R.menu.start, menu);
+    public boolean onPreparePanel(int featureId, View view, Menu menu) {
+        if (featureId == WindowUtils.FEATURE_VOICE_COMMANDS ||
+                featureId == Window.FEATURE_OPTIONS_PANEL) {
+            if (selectedMenu == MENU_MAIN) {
+                menu.setGroupVisible(R.id.main_menu_group_main, true);
+                menu.setGroupVisible(R.id.main_menu_group_start, false);
+            }
+            else if (selectedMenu == MENU_START){
+                menu.setGroupVisible(R.id.main_menu_group_main, false);
+                menu.setGroupVisible(R.id.main_menu_group_start, true);
+            }
         }
 
-        return true;
+        return super.onPreparePanel(featureId, view, menu);
+    }
+
+    @Override
+    public void onPanelClosed(int featureId, Menu menu) {
+        super.onPanelClosed(featureId, menu);
     }
 
     /**
@@ -411,6 +421,8 @@ public class MainActivity extends Activity implements BrilleappenClientListener 
             String result = data.getStringExtra("result");
 
             try {
+                selectedMenu = MENU_MAIN;
+
                 JSONObject jResult = new JSONObject(result);
                 eventUrl = jResult.getString("url");
                 client = new BrilleappenClient(this, eventUrl, username, password);
