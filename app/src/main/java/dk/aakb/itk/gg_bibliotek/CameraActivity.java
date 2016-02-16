@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.hardware.Camera;
 import android.hardware.Camera.PictureCallback;
@@ -25,8 +24,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
-import dk.aakb.itk.gg_bibliotek.R;
 
 public class CameraActivity extends Activity implements GestureDetector.BaseListener {
     private static final String TAG = "CameraActivity";
@@ -69,26 +66,30 @@ public class CameraActivity extends Activity implements GestureDetector.BaseList
         if (!checkCameraHardware(this)) {
             Log.i(TAG, "no camera");
             finish();
+            return;
         }
 
         // Create an instance of Camera
         camera = getCameraInstance();
 
         if (camera == null) {
-            // @TODO: Throw toast
-
             finish();
+            return;
         }
+
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        gestureDetector = new GestureDetector(this).setBaseListener(this);
+
+        state = STATE_PREVIEW;
+
+        Log.i(TAG, "Set up cameraPreview");
 
         // Create our Preview view and set it as the content of our activity.
         cameraPreview = new CameraPreview(this, camera);
         FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
         preview.addView(cameraPreview);
 
-        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        gestureDetector = new GestureDetector(this).setBaseListener(this);
-
-        state = STATE_PREVIEW;
+        Log.i(TAG, "Preview set up.");
     }
 
     public boolean onGenericMotionEvent(MotionEvent event) {
@@ -169,12 +170,10 @@ public class CameraActivity extends Activity implements GestureDetector.BaseList
     public static Camera getCameraInstance() {
         Log.i(TAG, "getting camera instance...");
         try {
-            Camera c = Camera.open(); // attempt to get a Camera instance
-
-            return c; // returns null if camera is unavailable
+            return Camera.open();
         } catch (Exception e) {
             Log.e(TAG, "could not getCameraInstance");
-            return null;
+            throw e;
         }
     }
 
@@ -214,8 +213,8 @@ public class CameraActivity extends Activity implements GestureDetector.BaseList
      */
     @Override
     protected void onPause() {
-        super.onPause();
         releaseCamera();
+        super.onPause();
     }
 
     /**
@@ -223,14 +222,16 @@ public class CameraActivity extends Activity implements GestureDetector.BaseList
      */
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         releaseCamera();
+        super.onDestroy();
     }
 
     /**
      * Release the camera resources.
      */
     private void releaseCamera() {
+        Log.i(TAG, "releasing camera");
+
         if (camera != null) {
             camera.stopPreview();
             cameraPreview.release();

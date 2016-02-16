@@ -76,16 +76,16 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
         Log.i(TAG, "get camera instance");
         camera = getCameraInstance();
 
-        // Create our Preview view and set it as the content of our activity.
-        cameraPreview = new CameraPreview(this, camera);
-        FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
-        preview.addView(cameraPreview);
-
         // Reset timer executions.
         timerExecutions = 0;
 
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         gestureDetector = new GestureDetector(this).setBaseListener(this);
+
+        // Create our Preview view and set it as the content of our activity.
+        cameraPreview = new CameraPreview(this, camera);
+        FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
+        preview.addView(cameraPreview);
 
         launchUnlimitedVideo();
     }
@@ -241,15 +241,12 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
 
         Log.i(TAG, "getting camera instance...");
         try {
-            c = Camera.open(); // attempt to get a Camera instance
+            return Camera.open(); // attempt to get a Camera instance
         } catch (Exception e) {
             Log.e(TAG, "could not getCameraInstance");
             throw e;
             // Camera is not available (in use or does not exist)
-            // @TODO: Throw Toast!
         }
-
-        return c; // returns null if camera is unavailable
     }
 
     /**
@@ -270,11 +267,11 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
      */
     @Override
     protected void onPause() {
-        super.onPause();
-
         timer.cancel();
-        releaseMediaRecorder();       // if you are using MediaRecorder, release it first
+        releaseMediaRecorder();
         releaseCamera();
+
+        super.onPause();
     }
 
     /**
@@ -282,11 +279,11 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
      */
     @Override
     protected void onDestroy() {
-        super.onDestroy();
-
         timer.cancel();
-        releaseMediaRecorder();       // if you are using MediaRecorder, release it first
+        releaseMediaRecorder();
         releaseCamera();
+
+        super.onDestroy();
     }
 
     @Override
