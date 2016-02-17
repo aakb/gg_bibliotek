@@ -41,10 +41,10 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
     private static final int TAKE_PICTURE_REQUEST = 101;
     private static final int RECORD_VIDEO_CAPTURE_REQUEST = 102;
     private static final int SCAN_EVENT_REQUEST = 103;
+
     private static final String STATE_VIDEOS = "videos";
     private static final String STATE_PICTURES = "pictures";
     private static final String STATE_CONTACTS = "contacts";
-
     private static final String STATE_EVENT = "url";
     private static final String STATE_EVENT_NAME = "event_name";
     private static final String STATE_EVENT_TWITTER_CAPTION = "event_twitter_caption";
@@ -55,23 +55,19 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
 
     private ArrayList<String> imagePaths = new ArrayList<>();
     private ArrayList<String> videoPaths = new ArrayList<>();
-
+    private ArrayList<Contact> contacts = new ArrayList<>();
     private String url = null;
-    BrilleappenClient client;
     private String username;
     private String password;
-
-    String eventName;
-    String eventUrl;
-    String captionTwitter;
-    String captionInstagram;
+    private String eventName;
+    private String captionTwitter;
+    private String captionInstagram;
 
     int selectedMenu = 0;
 
     private GestureDetector gestureDetector;
     private Menu panelMenu;
-
-    private ArrayList<Contact> contacts = new ArrayList<>();
+    BrilleappenClient client;
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
@@ -495,7 +491,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
 
             try {
                 JSONObject jResult = new JSONObject(result);
-                eventUrl = jResult.getString("url");
+                String eventUrl = jResult.getString("url");
 
                 selectedMenu = MENU_MAIN;
 
