@@ -46,7 +46,7 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
     private Timer timer;
     private int timerExecutions = 0;
     private boolean recording = false;
-    private String outputPath;
+    private File outputFile;
 
     /**
      * On create.
@@ -117,6 +117,11 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
                 handleBackwardSwipe();
                 return true;
             }
+        } else if (Gesture.SWIPE_DOWN.equals(gesture)) {
+            if (state == STATE_ACTION) {
+                handleDownSwipe();
+                return true;
+            }
         }
 
         return false;
@@ -170,10 +175,16 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
         returnVideo(false);
     }
 
+    private void handleDownSwipe() {
+        Log.i(TAG, "Delete video.");
+        outputFile.delete();
+        finish();
+    }
+
     private void returnVideo(boolean instaShare) {
         // Add path to file as result
         Intent returnIntent = new Intent();
-        returnIntent.putExtra("path", outputPath);
+        returnIntent.putExtra("path", outputFile.getAbsolutePath());
         returnIntent.putExtra("instaShare", instaShare);
         setResult(RESULT_OK, returnIntent);
 
@@ -219,8 +230,8 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
 
             // Step 4: Set output file
             Log.i(TAG, "set output file");
-            outputPath = getOutputVideoFile().toString();
-            mediaRecorder.setOutputFile(outputPath);
+            outputFile = getOutputVideoFile();
+            mediaRecorder.setOutputFile(outputFile.getAbsolutePath());
 
             (new Timer()).schedule(new TimerTask() {
                 @Override
