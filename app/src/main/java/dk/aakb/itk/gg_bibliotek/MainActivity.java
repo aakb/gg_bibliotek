@@ -471,7 +471,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
 
             // Send the file
             client = new BrilleappenClient(this, url, username, password);
-            client.execute("sendFile", new File(data.getStringExtra("path")), instaShare);
+            client.sendFile(new File(data.getStringExtra("path")), instaShare);
         } else if (requestCode == RECORD_VIDEO_CAPTURE_REQUEST && resultCode == RESULT_OK) {
             Log.i(TAG, "Received video: " + data.getStringExtra("path"));
 
@@ -483,7 +483,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
 
             // Send the file
             client = new BrilleappenClient(this, url, username, password);
-            client.execute("sendFile", new File(data.getStringExtra("path")), instaShare);
+            client.sendFile(new File(data.getStringExtra("path")), instaShare);
         } else if (requestCode == SCAN_EVENT_REQUEST && resultCode == RESULT_OK) {
             Log.i(TAG, "Received url QR: " + data.getStringExtra("result"));
 
@@ -498,7 +498,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
                 updatePanelMenu();
 
                 client = new BrilleappenClient(this, eventUrl, username, password);
-                client.execute("getEvent");
+                client.getEvent();
             }
             catch (JSONException e) {
                 Log.e(TAG, e.getMessage());
@@ -611,6 +611,11 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
 
     @Override
     public void notifyFileDone(BrilleappenClient client, JSONObject result) {
+        // Not implemented
+    }
+
+    @Override
+    public void createEventDone(BrilleappenClient client, JSONObject result) {
         // Not implemented
     }
 }
