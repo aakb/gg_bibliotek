@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
-    private static final String TAG = "bibliotek Brilleappen";
+    private static final String TAG = "brilleappen_client";
 
     private enum Execute {
         CREATE_EVENT,
@@ -182,6 +182,7 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
             URL url = getUrl(this.url, query);
 
             HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+            connection.setFixedLengthStreamingMode(file.length());
 
             String authString = username + ":" + password;
             String authStringEnc = Base64.encodeToString(authString.getBytes(), Base64.DEFAULT);
@@ -208,7 +209,7 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
 
             Log.i(TAG, serverResponseCode + ": " + response);
         } catch (Throwable t) {
-            Log.e(TAG, t.getMessage());
+            Log.e(TAG, t.getClass() + "\t" + t.getMessage());
         }
     }
 
@@ -261,6 +262,8 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
             bytesAvailable = fileInputStream.available();
             bufferSize = Math.min(bytesAvailable, maxBufferSize);
             bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+
+            Log.i(TAG, String.format("%d\t%d\t%d", bytesRead, bytesAvailable, bufferSize));
         }
 
         fileInputStream.close();
