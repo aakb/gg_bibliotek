@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.hardware.Camera;
 import android.media.AudioManager;
 import android.media.CamcorderProfile;
@@ -25,44 +26,44 @@ import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import dk.aakb.itk.gg_bibliotek.R;
-
 public class VideoActivity extends Activity implements GestureDetector.BaseListener {
     private static final String TAG = "VideoActivity";
 
+    private int state;
+    private static final int STATE_RECORDING = 1;
+    private static final int STATE_ACTION = 2;
+
     private Camera camera;
     private CameraPreview cameraPreview;
-    private MediaRecorder mediaRecorder;
-    private TextView durationText;
-
-    private Timer timer;
-    private int timerExecutions = 0;
+    private TextView textField;
     private String filePrefix;
-    private boolean recording = false;
-    private String outputPath;
 
     private AudioManager audioManager;
     private GestureDetector gestureDetector;
-    private TextView textField;
+
+    private TextView durationText;
+    private MediaRecorder mediaRecorder;
+    private Timer timer;
+    private int timerExecutions = 0;
+    private boolean recording = false;
+    private String outputPath;
 
     /**
      * On create.
      *
-     * @param savedInstanceState save instance state
+     * @param savedInstanceState
      */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Log.i(TAG, "Launching video activity");
+        Log.i(TAG, "Launching activity");
 
         // Get file prefix
         Intent intent = getIntent();
         filePrefix = intent.getStringExtra("FILE_PREFIX");
 
         setContentView(R.layout.activity_camera_video);
-
-        durationText = (TextView) findViewById(R.id.text_camera_duration);
 
         textField = (TextView) findViewById(R.id.text_camera_helptext);
 
@@ -71,13 +72,14 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
         if (!checkCameraHardware(this)) {
             Log.i(TAG, "no camera");
             finish();
+            return;
         }
 
-        Log.i(TAG, "get camera instance");
         camera = getCameraInstance();
-
-        // Reset timer executions.
-        timerExecutions = 0;
+        if (camera == null) {
+            finish();
+            return;
+        }
 
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         gestureDetector = new GestureDetector(this).setBaseListener(this);
@@ -87,6 +89,11 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
         FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
         preview.addView(cameraPreview);
 
+        state = STATE_RECORDING;
+
+        // Reset timer executions.
+        timerExecutions = 0;
+        durationText = (TextView) findViewById(R.id.text_camera_duration);
         launchUnlimitedVideo();
     }
 
@@ -96,38 +103,82 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
 
     public boolean onGesture(Gesture gesture) {
         if (Gesture.TAP.equals(gesture)) {
-            audioManager.playSoundEffect(AudioManager.FX_KEY_CLICK);
-
-            if (recording) {
-                Log.i(TAG, "Stop recording!");
-
-                timer.cancel();
-
-                try {
-                    mediaRecorder.stop();  // stop the recording
-                    releaseMediaRecorder(); // release the MediaRecorder object
-                    releaseCamera();
-
-                    // Add path to file as result
-                    Intent returnIntent = new Intent();
-                    returnIntent.putExtra("path", outputPath);
-                    setResult(RESULT_OK, returnIntent);
-
-                    recording = false;
-
-                    // Finish activity
-                    finish();
-                } catch (Exception e) {
-                    Log.d(TAG, "Exception stopping recording: " + e.getMessage());
-                    releaseMediaRecorder();
-                    releaseCamera();
-                    finish();
-                }
+            if (state == STATE_RECORDING) {
+                handleSingleTap();
+                return true;
             }
-
-            return true;
+        } else if (Gesture.SWIPE_RIGHT.equals(gesture)) {
+            if (state == STATE_ACTION) {
+                handleForwardSwipe();
+                return true;
+            }
+        } else if (Gesture.SWIPE_LEFT.equals(gesture)) {
+            if (state == STATE_ACTION) {
+                handleBackwardSwipe();
+                return true;
+            }
         }
+
         return false;
+    }
+
+    private void handleSingleTap() {
+        Log.i(TAG, "Single tap.");
+
+        audioManager.playSoundEffect(AudioManager.FX_KEY_CLICK);
+
+        if (recording) {
+            Log.i(TAG, "Stop recording!");
+
+            timer.cancel();
+
+            try {
+                mediaRecorder.stop();  // stop the recording
+                releaseMediaRecorder(); // release the MediaRecorder object
+                releaseCamera();
+                recording = false;
+
+                textField.setBackgroundColor(Color.argb(125, 0, 0, 0));
+                textField.setTextColor(Color.WHITE);
+                textField.setText("\nSwipe FORWARD to INSTASHARE.\nSwipe BACK to ARCHIVE.\nSwipe DOWN to CANCEL.\n");
+
+                state = STATE_ACTION;
+
+                // Add path to file as result
+                // Intent returnIntent = new Intent();
+                // returnIntent.putExtra("path", outputPath);
+                // setResult(RESULT_OK, returnIntent);
+
+                // // Finish activity
+                // finish();
+            } catch (Exception e) {
+                Log.d(TAG, "Exception stopping recording: " + e.getMessage());
+                releaseMediaRecorder();
+                releaseCamera();
+                finish();
+            }
+        }
+    }
+
+    private void handleForwardSwipe() {
+        Log.i(TAG, "InstaShare!!!");
+        returnVideo(true);
+    }
+
+    private void handleBackwardSwipe() {
+        Log.i(TAG, "Archive.");
+        returnVideo(false);
+    }
+
+    private void returnVideo(boolean instaShare) {
+        // Add path to file as result
+        Intent returnIntent = new Intent();
+        returnIntent.putExtra("path", outputPath);
+        returnIntent.putExtra("instaShare", instaShare);
+        setResult(RESULT_OK, returnIntent);
+
+        // Finish activity
+        finish();
     }
 
     private void launchUnlimitedVideo() {
@@ -150,7 +201,6 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
                 public void onError(MediaRecorder mediarecorder1, int k, int i1) {
                     Log.e(TAG, String.format("Media Recorder error: k=%d, i1=%d", k, i1));
                 }
-
             });
 
             // Step 1: Unlock and set camera to MediaRecorder. Clear preview.
@@ -237,8 +287,6 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
      * A safe way to get an instance of the Camera object.
      */
     public static Camera getCameraInstance() {
-        Camera c = null;
-
         Log.i(TAG, "getting camera instance...");
         try {
             return Camera.open(); // attempt to get a Camera instance
