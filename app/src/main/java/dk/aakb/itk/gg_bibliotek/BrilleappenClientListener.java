@@ -9,5 +9,7 @@ public interface BrilleappenClientListener {
 
     void sendFileDone(BrilleappenClient client, JSONObject result);
 
+    void sendFileProgress(BrilleappenClient client, int progress, int max);
+
     void notifyFileDone(BrilleappenClient client, JSONObject result);
 }

@@ -137,6 +137,9 @@ public class BrilleappenClientTest extends ApplicationTestCase<Application> impl
     }
 
     @Override
+    public void sendFileProgress(BrilleappenClient client, int current, int total) {}
+
+    @Override
     public void getEventDone(BrilleappenClient client, JSONObject result) {
         assertTrue(result.has("event"));
         signal.countDown();

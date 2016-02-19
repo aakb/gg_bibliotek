@@ -255,15 +255,18 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
         int bufferSize = Math.min(bytesAvailable, maxBufferSize);
         byte[] buffer = new byte[bufferSize];
 
+        int totalBytesAvailable = bytesAvailable;
+        int totalBytesRead = 0;
         int bytesRead = fileInputStream.read(buffer, 0, bufferSize);
 
         while (bytesRead > 0) {
+            totalBytesRead += bytesRead;
             dos.write(buffer, 0, bufferSize);
             bytesAvailable = fileInputStream.available();
             bufferSize = Math.min(bytesAvailable, maxBufferSize);
             bytesRead = fileInputStream.read(buffer, 0, bufferSize);
 
-            Log.i(TAG, String.format("%d\t%d\t%d", bytesRead, bytesAvailable, bufferSize));
+            listener.sendFileProgress(this, totalBytesRead, totalBytesAvailable);
         }
 
         fileInputStream.close();
