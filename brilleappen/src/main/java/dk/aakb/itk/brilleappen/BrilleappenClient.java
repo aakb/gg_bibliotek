@@ -1,4 +1,4 @@
-package dk.aakb.itk.gg_bibliotek;
+package dk.aakb.itk.brilleappen;
 
 import android.os.AsyncTask;
 import android.util.Base64;

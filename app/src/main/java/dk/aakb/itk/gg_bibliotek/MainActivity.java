@@ -33,6 +33,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Properties;
 
+import dk.aakb.itk.brilleappen.BrilleappenClient;
+import dk.aakb.itk.brilleappen.BrilleappenClientListener;
+
 public class MainActivity extends Activity implements BrilleappenClientListener,  GestureDetector.BaseListener  {
     public static final String FILE_DIRECTORY = "Bibliotek";
 

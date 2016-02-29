@@ -1,4 +1,13 @@
-apply plugin: 'com.android.application'
+apply plugin: 'android-library'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:1.5.+'
+    }
+}
 
 repositories {
     jcenter()
@@ -12,9 +21,8 @@ android {
     buildToolsVersion "23.0.2"
 
     defaultConfig {
-        applicationId "dk.aakb.itk.gg_bibliotek"
         minSdkVersion 19
-        targetSdkVersion 19
+        targetSdkVersion 23
         versionCode 1
         versionName "1.0"
     }
@@ -29,20 +37,8 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-
-    packagingOptions {
-        exclude 'META-INF/DEPENDENCIES'
-        exclude 'META-INF/NOTICE'
-        exclude 'META-INF/LICENSE'
-        exclude 'META-INF/LICENSE.txt'
-        exclude 'META-INF/NOTICE.txt'
-    }
 }
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.google.zxing:core:3.2.1'
-    compile 'commons-validator:commons-validator:1.5.0'
-    compile 'com.google.code.gson:gson:2.6.2'
-    compile project(':brilleappen')
 }
