@@ -182,6 +182,14 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
             updatePanelMenu();
         }
 
+        // Hide the finish_menu when using voice commands.
+        if (featureId == WindowUtils.FEATURE_VOICE_COMMANDS) {
+            menu.findItem(R.id.finish_menu_item).setVisible(false);
+        }
+        else {
+            menu.findItem(R.id.finish_menu_item).setVisible(true);
+        }
+
         return super.onPreparePanel(featureId, view, menu);
     }
 
@@ -573,6 +581,4 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
     public void createEventDone(BrilleappenClient client, JSONObject result) {
         // Not implemented
     }
-
-
 }
