@@ -71,23 +71,6 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
     private Menu panelMenu;
     BrilleappenClient client;
 
-    @Override
-    public void onSaveInstanceState(Bundle savedInstanceState) {
-        Log.i(TAG, "onSaveInstanceState");
-
-        // Save the user's current game state
-        savedInstanceState.putStringArrayList(STATE_VIDEOS, videoPaths);
-        savedInstanceState.putStringArrayList(STATE_PICTURES, imagePaths);
-        savedInstanceState.putString(STATE_EVENT, url);
-        savedInstanceState.putString(STATE_EVENT_NAME, eventName);
-        savedInstanceState.putString(STATE_EVENT_TWITTER_CAPTION, captionTwitter);
-        savedInstanceState.putString(STATE_EVENT_INSTAGRAM_CAPTION, captionInstagram);
-        savedInstanceState.putSerializable(STATE_CONTACTS, contacts);
-
-        // Always call the superclass so it can save the view hierarchy state
-        super.onSaveInstanceState(savedInstanceState);
-    }
-
     /**
      * On create.
      *
@@ -117,24 +100,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
         this.username = properties.getProperty("Username");
         this.password = properties.getProperty("Password");
 
-        // Check whether we're recreating a previously destroyed instance
-        if (savedInstanceState != null) {
-            Log.i(TAG, "Restoring savedInstance");
-
-            // Restore state members from saved instance
-            imagePaths = savedInstanceState.getStringArrayList(STATE_PICTURES);
-            videoPaths = savedInstanceState.getStringArrayList(STATE_VIDEOS);
-            url = savedInstanceState.getString(STATE_EVENT);
-            eventName = savedInstanceState.getString(STATE_EVENT_NAME);
-            captionInstagram = savedInstanceState.getString(STATE_EVENT_INSTAGRAM_CAPTION);
-            captionTwitter = savedInstanceState.getString(STATE_EVENT_TWITTER_CAPTION);
-            contacts = (ArrayList<Contact>) savedInstanceState.getSerializable(STATE_CONTACTS);
-        } else {
-            Log.i(TAG, "Restoring state");
-
-            // Probably initialize members with default values for a new instance
-            restoreState();
-        }
+        restoreState();
 
         if (url != null) {
             selectedMenu = MENU_MAIN;
@@ -268,8 +234,6 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
                 case R.id.contacts_menu_item:
                     Log.i(TAG, "menu: make call");
 
-//                    Log.i(TAG, contacts.get(item.getOrder()).toString());
-
                     Contact contact = contacts.get(item.getOrder());
 
                     Log.i(TAG, "Calling: " + contact.getPhoneNumber());
@@ -334,24 +298,31 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
         String serializedVideoPaths = (new JSONArray(videoPaths)).toString();
         String serializedImagePaths = (new JSONArray(imagePaths)).toString();
 
+        JSONArray jsonContacts = new JSONArray();
+
+        try {
+            for (Contact c : contacts) {
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("name", c.getName());
+                jsonObject.put("phoneNumber", c.getPhoneNumber());
+                jsonContacts.put(jsonObject);
+            }
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+            Log.e(TAG, e.getMessage());
+            // ignore.
+        }
+
         SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(STATE_VIDEOS, serializedVideoPaths);
         editor.putString(STATE_PICTURES, serializedImagePaths);
+        editor.putString(STATE_CONTACTS, jsonContacts.toString());
         editor.putString(STATE_EVENT, url);
         editor.putString(STATE_EVENT_NAME, eventName);
         editor.putString(STATE_EVENT_INSTAGRAM_CAPTION, captionInstagram);
         editor.putString(STATE_EVENT_TWITTER_CAPTION, captionTwitter);
-        try {
-            ByteArrayOutputStream bo = new ByteArrayOutputStream();
-            ObjectOutputStream so = new ObjectOutputStream(bo);
-            so.writeObject(contacts);
-            so.flush();
-            String serializedContacts = bo.toString("ISO-8859-1");
-            editor.putString(STATE_CONTACTS, serializedContacts);
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage());
-        }
         editor.apply();
     }
 
@@ -392,21 +363,15 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
             for (int i = 0; i < jsonArray.length(); i++) {
                 imagePaths.add(jsonArray.getString(i));
             }
+
+            jsonArray = new JSONArray(serializedContacts);
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject obj = (JSONObject) jsonArray.get(i);
+
+                contacts.add(new Contact(obj.getString("name"), obj.getString("phoneNumber")));
+            }
         } catch (JSONException e) {
             // ignore
-        }
-
-        if (!serializedContacts.equals("[]")) {
-            try {
-                ByteArrayInputStream bi = new ByteArrayInputStream(serializedContacts.getBytes("ISO-8859-1"));
-                ObjectInputStream si = new ObjectInputStream(bi);
-                contacts = (ArrayList<Contact>) si.readObject();
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-                Log.e(TAG, e.getMessage());
-                finish();
-            }
         }
 
         Log.i(TAG, "Restored url: " + url);
