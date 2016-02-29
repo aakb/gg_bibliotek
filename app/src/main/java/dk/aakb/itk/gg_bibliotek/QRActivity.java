@@ -23,8 +23,6 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-import dk.aakb.itk.gg_bibliotek.R;
-
 public class QRActivity extends Activity {
     private static final String TAG = "QRActivity";
     private static final int   SCANS_PER_SEC = 6;
@@ -129,17 +127,13 @@ public class QRActivity extends Activity {
      * A safe way to get an instance of the Camera object.
      */
     public static Camera getCameraInstance() {
-        Camera c;
-
         Log.i(TAG, "getting camera instance...");
         try {
-            c = Camera.open(); // attempt to get a Camera instance
+            return Camera.open(); // attempt to get a Camera instance
         } catch (Exception e) {
             Log.e(TAG, "could not getCameraInstance");
             throw e;
         }
-
-        return c; // returns null if camera is unavailable
     }
 
     /**
@@ -155,6 +149,7 @@ public class QRActivity extends Activity {
     @Override
     protected void onPause() {
         releaseCamera();
+
         super.onPause();
     }
 
@@ -164,6 +159,7 @@ public class QRActivity extends Activity {
     @Override
     protected void onDestroy() {
         releaseCamera();
+
         super.onDestroy();
     }
 

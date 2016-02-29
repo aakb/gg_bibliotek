@@ -270,6 +270,8 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
 
                     Contact contact = contacts.get(item.getOrder());
 
+                    Log.i(TAG, "Calling: " + contact.getPhoneNumber());
+
                     makeCall(contact.getPhoneNumber());
 
                     break;

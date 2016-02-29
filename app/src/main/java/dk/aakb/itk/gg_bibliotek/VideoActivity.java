@@ -25,8 +25,6 @@ import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import dk.aakb.itk.gg_bibliotek.R;
-
 public class VideoActivity extends Activity implements GestureDetector.BaseListener {
     private static final String TAG = "VideoActivity";
 
@@ -43,7 +41,6 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
 
     private AudioManager audioManager;
     private GestureDetector gestureDetector;
-    private TextView textField;
 
     /**
      * On create.
@@ -64,7 +61,7 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
 
         durationText = (TextView) findViewById(R.id.text_camera_duration);
 
-        textField = (TextView) findViewById(R.id.text_camera_helptext);
+        TextView textField = (TextView) findViewById(R.id.text_camera_helptext);
 
         textField.setText("Tap to stop recording");
 
@@ -101,7 +98,7 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
             if (recording) {
                 Log.i(TAG, "Stop recording!");
 
-                timer.cancel();
+                releaseTimer();
 
                 try {
                     mediaRecorder.stop();  // stop the recording
@@ -114,13 +111,12 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
                     setResult(RESULT_OK, returnIntent);
 
                     recording = false;
-
-                    // Finish activity
-                    finish();
                 } catch (Exception e) {
                     Log.d(TAG, "Exception stopping recording: " + e.getMessage());
                     releaseMediaRecorder();
                     releaseCamera();
+                }
+                finally {
                     finish();
                 }
             }
@@ -237,8 +233,6 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
      * A safe way to get an instance of the Camera object.
      */
     public static Camera getCameraInstance() {
-        Camera c = null;
-
         Log.i(TAG, "getting camera instance...");
         try {
             return Camera.open(); // attempt to get a Camera instance
@@ -267,7 +261,7 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
      */
     @Override
     protected void onPause() {
-        timer.cancel();
+        releaseTimer();
         releaseMediaRecorder();
         releaseCamera();
 
@@ -279,16 +273,11 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
      */
     @Override
     protected void onDestroy() {
-        timer.cancel();
+        releaseTimer();
         releaseMediaRecorder();
         releaseCamera();
 
         super.onDestroy();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
     }
 
     /**
@@ -312,6 +301,12 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
             cameraPreview.release();
             camera.release();        // release the camera for other applications
             camera = null;
+        }
+    }
+
+    private void releaseTimer() {
+        if (timer != null) {
+            timer.cancel();
         }
     }
 

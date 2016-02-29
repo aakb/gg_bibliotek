@@ -80,8 +80,6 @@ public class CameraActivity extends Activity implements GestureDetector.BaseList
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         gestureDetector = new GestureDetector(this).setBaseListener(this);
 
-        state = STATE_PREVIEW;
-
         Log.i(TAG, "Set up cameraPreview");
 
         // Create our Preview view and set it as the content of our activity.
@@ -90,6 +88,8 @@ public class CameraActivity extends Activity implements GestureDetector.BaseList
         preview.addView(cameraPreview);
 
         Log.i(TAG, "Preview set up.");
+
+        state = STATE_PREVIEW;
     }
 
     public boolean onGenericMotionEvent(MotionEvent event) {
@@ -214,6 +214,7 @@ public class CameraActivity extends Activity implements GestureDetector.BaseList
     @Override
     protected void onPause() {
         releaseCamera();
+
         super.onPause();
     }
 
@@ -223,6 +224,7 @@ public class CameraActivity extends Activity implements GestureDetector.BaseList
     @Override
     protected void onDestroy() {
         releaseCamera();
+
         super.onDestroy();
     }
 
