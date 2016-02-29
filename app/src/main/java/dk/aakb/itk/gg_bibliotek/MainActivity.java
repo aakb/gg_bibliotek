@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.AssetManager;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -14,6 +15,7 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -266,7 +268,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
                 case R.id.contacts_menu_item:
                     Log.i(TAG, "menu: make call");
 
-                    Log.i(TAG, contacts.get(item.getOrder()).toString());
+//                    Log.i(TAG, contacts.get(item.getOrder()).toString());
 
                     Contact contact = contacts.get(item.getOrder());
 
@@ -471,9 +473,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
             saveState();
             updateUI();
 
-            // Send the file
-            client = new BrilleappenClient(this, url, username, password);
-            client.execute("sendFile", new File(data.getStringExtra("path")), instaShare);
+            sendFile(data.getStringExtra("path"), instaShare);
         } else if (requestCode == RECORD_VIDEO_CAPTURE_REQUEST && resultCode == RESULT_OK) {
             Log.i(TAG, "Received video: " + data.getStringExtra("path"));
 
@@ -483,9 +483,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
             saveState();
             updateUI();
 
-            // Send the file
-            client = new BrilleappenClient(this, url, username, password);
-            client.execute("sendFile", new File(data.getStringExtra("path")), instaShare);
+            sendFile(data.getStringExtra("path"), instaShare);
         } else if (requestCode == SCAN_EVENT_REQUEST && resultCode == RESULT_OK) {
             Log.i(TAG, "Received url QR: " + data.getStringExtra("result"));
 
@@ -500,7 +498,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
                 updatePanelMenu();
 
                 client = new BrilleappenClient(this, eventUrl, username, password);
-                client.execute("getEvent");
+                client.getEvent();
             }
             catch (JSONException e) {
                 Log.e(TAG, e.getMessage());
@@ -601,12 +599,40 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
         }
     }
 
+    private void sendFile(String path, boolean share) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                proposeAToast("Uploading file ");
+            }
+        });
+        client = new BrilleappenClient(this, url, username, password);
+        client.sendFile(new File(path), share);
+    }
+
     @Override
     public void sendFileDone(BrilleappenClient client, JSONObject result) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                ProgressBar progressBar = (ProgressBar)findViewById(R.id.progressBar);
+                progressBar.setVisibility(View.INVISIBLE);
                 proposeAToast("File delivered!");
+            }
+        });
+    }
+
+    @Override
+    public void sendFileProgress(BrilleappenClient client, final int progress, final int max) {
+        Log.i(TAG, String.format("sendFileProgress: %d/%d", progress, max));
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ProgressBar progressBar = (ProgressBar)findViewById(R.id.progressBar);
+                progressBar.setVisibility(View.VISIBLE);
+                progressBar.getIndeterminateDrawable().setColorFilter(Color.WHITE, android.graphics.PorterDuff.Mode.MULTIPLY);
+                progressBar.setMax(max);
+                progressBar.setProgress(progress);
             }
         });
     }
@@ -615,4 +641,11 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
     public void notifyFileDone(BrilleappenClient client, JSONObject result) {
         // Not implemented
     }
+
+    @Override
+    public void createEventDone(BrilleappenClient client, JSONObject result) {
+        // Not implemented
+    }
+
+
 }
