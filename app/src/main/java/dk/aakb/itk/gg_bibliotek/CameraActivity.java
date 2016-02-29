@@ -138,6 +138,8 @@ public class CameraActivity extends Activity implements GestureDetector.BaseList
     }
 
     private void returnPicture(boolean instaShare) {
+        releaseCamera();
+
         File pictureFile = getOutputImageFile();
         if (pictureFile == null) {
             Log.d(TAG, "Error creating media file, check storage permissions");
@@ -154,13 +156,15 @@ public class CameraActivity extends Activity implements GestureDetector.BaseList
             returnIntent.putExtra("path", pictureFile.getAbsolutePath());
             returnIntent.putExtra("instaShare", instaShare);
             setResult(RESULT_OK, returnIntent);
-
-            // Finish activity
-            finish();
         } catch (FileNotFoundException e) {
-            Log.d(TAG, "File not found: " + e.getMessage());
+            e.printStackTrace();
+            Log.e(TAG, "File not found: " + e.getMessage());
         } catch (IOException e) {
-            Log.d(TAG, "Error accessing file: " + e.getMessage());
+            e.printStackTrace();
+            Log.e(TAG, "Error accessing file: " + e.getMessage());
+        }
+        finally {
+            finish();
         }
     }
 

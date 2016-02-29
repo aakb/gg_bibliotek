@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.AssetManager;
 import android.graphics.Color;
-import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -29,13 +28,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Properties;
 
@@ -239,7 +233,9 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
 
                     Contact contact = contacts.get(item.getOrder());
 
-                    Log.i(TAG, "Calling: " + contact.getPhoneNumber());
+                    Log.i(TAG, "Calling: (" + item.getOrder() + ") " + contact.getName() + " " + contact.getPhoneNumber());
+
+                    proposeAToast("Calling: (" + item.getOrder() + ") " + contact.getName() + " " + contact.getPhoneNumber());
 
                     makeCall(contact.getPhoneNumber());
 

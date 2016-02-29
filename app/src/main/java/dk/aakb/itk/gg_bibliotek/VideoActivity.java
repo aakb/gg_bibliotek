@@ -66,8 +66,7 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
         setContentView(R.layout.activity_camera_video);
 
         durationText = (TextView) findViewById(R.id.text_camera_duration);
-
-        TextView textField = (TextView) findViewById(R.id.text_camera_helptext);
+        textField = (TextView) findViewById(R.id.text_camera_helptext);
 
         textField.setText("Tap to stop recording");
 
@@ -138,8 +137,8 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
             Log.i(TAG, "Stop recording!");
 
             try {
-                mediaRecorder.stop();  // stop the recording
                 releaseTimer();
+                mediaRecorder.stop();  // stop the recording
                 releaseMediaRecorder(); // release the MediaRecorder object
                 releaseCamera();
                 recording = false;
@@ -150,6 +149,7 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
 
                 state = STATE_ACTION;
             } catch (Exception e) {
+                e.printStackTrace();
                 Log.d(TAG, "Exception stopping recording: " + e.getMessage());
                 releaseMediaRecorder();
                 releaseCamera();
