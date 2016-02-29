@@ -22,6 +22,8 @@ import android.widget.Toast;
 import com.google.android.glass.touchpad.Gesture;
 import com.google.android.glass.touchpad.GestureDetector;
 import com.google.android.glass.view.WindowUtils;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -33,6 +35,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Properties;
 
@@ -295,30 +298,13 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
      * Save state.
      */
     private void saveState() {
-        String serializedVideoPaths = (new JSONArray(videoPaths)).toString();
-        String serializedImagePaths = (new JSONArray(imagePaths)).toString();
-
-        JSONArray jsonContacts = new JSONArray();
-
-        try {
-            for (Contact c : contacts) {
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("name", c.getName());
-                jsonObject.put("phoneNumber", c.getPhoneNumber());
-                jsonContacts.put(jsonObject);
-            }
-        }
-        catch (JSONException e) {
-            e.printStackTrace();
-            Log.e(TAG, e.getMessage());
-            // ignore.
-        }
+        Gson gson = new Gson();
 
         SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(STATE_VIDEOS, serializedVideoPaths);
-        editor.putString(STATE_PICTURES, serializedImagePaths);
-        editor.putString(STATE_CONTACTS, jsonContacts.toString());
+        editor.putString(STATE_VIDEOS, gson.toJson(videoPaths));
+        editor.putString(STATE_PICTURES, gson.toJson(imagePaths));
+        editor.putString(STATE_CONTACTS, gson.toJson(contacts));
         editor.putString(STATE_EVENT, url);
         editor.putString(STATE_EVENT_NAME, eventName);
         editor.putString(STATE_EVENT_INSTAGRAM_CAPTION, captionInstagram);
@@ -349,30 +335,10 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
         String serializedImagePaths = sharedPref.getString(STATE_PICTURES, "[]");
         String serializedContacts = sharedPref.getString(STATE_CONTACTS, "[]");
 
-        imagePaths = new ArrayList<>();
-        videoPaths = new ArrayList<>();
-        contacts = new ArrayList<>();
-
-        try {
-            JSONArray jsonArray = new JSONArray(serializedVideoPaths);
-            for (int i = 0; i < jsonArray.length(); i++) {
-                videoPaths.add(jsonArray.getString(i));
-            }
-
-            jsonArray = new JSONArray(serializedImagePaths);
-            for (int i = 0; i < jsonArray.length(); i++) {
-                imagePaths.add(jsonArray.getString(i));
-            }
-
-            jsonArray = new JSONArray(serializedContacts);
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject obj = (JSONObject) jsonArray.get(i);
-
-                contacts.add(new Contact(obj.getString("name"), obj.getString("phoneNumber")));
-            }
-        } catch (JSONException e) {
-            // ignore
-        }
+        Gson gson = new Gson();
+        videoPaths = gson.fromJson(serializedVideoPaths, new TypeToken<ArrayList<String>>() {}.getType());
+        imagePaths = gson.fromJson(serializedImagePaths, new TypeToken<ArrayList<String>>() {}.getType());
+        contacts = gson.fromJson(serializedContacts, new TypeToken<ArrayList<Contact>>() {}.getType());
 
         Log.i(TAG, "Restored url: " + url);
         Log.i(TAG, "Restored name: " + eventName);
