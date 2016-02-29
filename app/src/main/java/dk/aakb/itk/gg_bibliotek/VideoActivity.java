@@ -356,7 +356,6 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
     private void releaseCamera() {
         if (camera != null) {
             camera.stopPreview();
-            cameraPreview.release();
             camera.release();        // release the camera for other applications
             camera = null;
         }
