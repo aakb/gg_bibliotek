@@ -1,6 +1,5 @@
 package dk.aakb.itk.gg_bibliotek;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -25,7 +24,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class CameraActivity extends Activity implements GestureDetector.BaseListener {
+public class CameraActivity extends BaseActivity implements GestureDetector.BaseListener {
     private static final String TAG = "CameraActivity";
     private static final int STATE_PREVIEW = 1;
     private static final int STATE_ACTION = 2;
@@ -59,9 +58,13 @@ public class CameraActivity extends Activity implements GestureDetector.BaseList
 
         setContentView(R.layout.activity_camera);
 
-        textField = (TextView) findViewById(R.id.text_camera_helptext);
-
-        textField.setText("Tap to take picture");
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                textField = (TextView) findViewById(R.id.text_camera_helptext);
+                textField.setText(R.string.tap_to_take_picture);
+            }
+        });
 
         if (!checkCameraHardware(this)) {
             Log.i(TAG, "no camera");
@@ -122,6 +125,7 @@ public class CameraActivity extends Activity implements GestureDetector.BaseList
     private void handleSingleTap() {
         Log.i(TAG, "Single tap.");
 
+        // Run onUIThread?
         audioManager.playSoundEffect(AudioManager.FX_KEY_CLICK);
 
         camera.takePicture(null, null, mPicture);
@@ -140,7 +144,7 @@ public class CameraActivity extends Activity implements GestureDetector.BaseList
     private void returnPicture(boolean instaShare) {
         releaseCamera();
 
-        File pictureFile = getOutputImageFile();
+        File pictureFile = getOutputFile();
         if (pictureFile == null) {
             Log.d(TAG, "Error creating media file, check storage permissions");
             return;
@@ -185,13 +189,9 @@ public class CameraActivity extends Activity implements GestureDetector.BaseList
      * Check if this device has a camera
      */
     private boolean checkCameraHardware(Context context) {
-        if (context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)) {
-            // this device has a camera
-            return true;
-        } else {
-            // no camera on this device
-            return false;
-        }
+        // this device has a camera
+// no camera on this device
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA);
     }
 
     /**
@@ -204,9 +204,15 @@ public class CameraActivity extends Activity implements GestureDetector.BaseList
 
             pictureData = data;
 
-            textField.setBackgroundColor(Color.argb(125, 0, 0, 0));
-            textField.setTextColor(Color.WHITE);
-            textField.setText("\nSwipe FORWARD to INSTASHARE.\nSwipe BACK to ARCHIVE.\nSwipe DOWN to CANCEL.\n");
+            runOnUiThread(new Runnable() {
+                              @Override
+                              public void run() {
+                                  textField.setBackgroundColor(Color.argb(125, 0, 0, 0));
+                                  textField.setTextColor(Color.WHITE);
+                                  textField.setText(R.string.swipe_actions);
+                              }
+                          }
+            );
 
             state = STATE_ACTION;
         }
@@ -240,7 +246,8 @@ public class CameraActivity extends Activity implements GestureDetector.BaseList
 
         if (camera != null) {
             camera.stopPreview();
-            camera.release();
+            cameraPreview.release();
+            camera.release();        // release the camera for other applications
             camera = null;
         }
     }
@@ -248,7 +255,7 @@ public class CameraActivity extends Activity implements GestureDetector.BaseList
     /**
      * Create a File for saving an image
      */
-    private File getOutputImageFile() {
+    private File getOutputFile() {
         File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), MainActivity.FILE_DIRECTORY);
 
         Log.i(TAG, mediaStorageDir.getAbsolutePath());

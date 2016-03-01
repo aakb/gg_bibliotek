@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">Dokk1 Event</string>
-    <string name="countdown_default">...</string>
+    <string name="countdown_default">…</string>
     <string name="progress_image">Images</string>
     <string name="progress_videos">Videos</string>
     <string name="event">Event: </string>
@@ -10,17 +10,24 @@
         <item quantity="one">Uploading 1 file</item>
         <item quantity="other">Uploading %d</item>
     </plurals>
-    <string name="hashtags_twitter">Twitter: </string>
-    <string name="hashtags_instagram">Instagram: </string>
+    <string name="caption_twitter">Twitter: </string>
+    <string name="caption_instagram">Instagram: </string>
 
     <string name="voice_command_start_program">Event app</string>
 
     <string name="finish">Finish event</string>
-    <string name="take_image">Take image</string>
+    <string name="take_picture">Take picture</string>
     <string name="record_video">Record video</string>
     <string name="cancel">Remove all files and exit</string>
     <string name="confirm_cancel">Yes</string>
     <string name="abort_cancel">No</string>
     <string name="scan_event">Scan event</string>
     <string name="call">Make call</string>
+    <string name="uploading_file">Uploading file</string>
+    <string name="file_uploaded">File uploaded</string>
+    <string name="calling_name_phone">Calling %1$s (%2$s)</string>
+    <string name="tap_to_take_picture">Tap to take picture</string>
+    <string name="swipe_actions">Swipe FORWARD to INSTASHARE.\nSwipe BACK to ARCHIVE.\nSwipe DOWN to CANCEL.\n"</string>
+    <string name="qr_code_scanned">QR code scanned</string>
+    <string name="scanning_qr_code">Scanning QR code</string>
 </resources>

@@ -1,6 +1,5 @@
 package dk.aakb.itk.gg_bibliotek;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -16,7 +15,6 @@ import android.view.View;
 import android.view.Window;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.glass.touchpad.Gesture;
 import com.google.android.glass.touchpad.GestureDetector;
@@ -36,7 +34,7 @@ import java.util.Properties;
 import dk.aakb.itk.brilleappen.BrilleappenClient;
 import dk.aakb.itk.brilleappen.BrilleappenClientListener;
 
-public class MainActivity extends Activity implements BrilleappenClientListener,  GestureDetector.BaseListener  {
+public class MainActivity extends BaseActivity implements BrilleappenClientListener,  GestureDetector.BaseListener  {
     public static final String FILE_DIRECTORY = "Bibliotek";
 
     private static final String TAG = "bibliotek MainActivity";
@@ -45,7 +43,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
     private static final int SCAN_EVENT_REQUEST = 103;
 
     private static final String STATE_VIDEOS = "videos";
-    private static final String STATE_PICTURES = "pictures";
+    private static final String STATE_IMAGES = "images";
     private static final String STATE_CONTACTS = "contacts";
     private static final String STATE_EVENT = "url";
     private static final String STATE_EVENT_NAME = "event_name";
@@ -117,14 +115,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
             setContentView(R.layout.activity_layout_init);
         }
 
-        Log.i(TAG, "------------");
-
-        File f = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), MainActivity.FILE_DIRECTORY);
-        Log.i(TAG, "Listing files in: " + f.getAbsolutePath());
-
-        getDirectoryListing(f);
-
-        Log.i(TAG, "------------");
+        listFiles();
 
         gestureDetector = new GestureDetector(this).setBaseListener(this);
     }
@@ -226,8 +217,8 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
         if (featureId == WindowUtils.FEATURE_VOICE_COMMANDS ||
                 featureId == Window.FEATURE_OPTIONS_PANEL) {
             switch (item.getItemId()) {
-                case R.id.take_image_menu_item:
-                    Log.i(TAG, "menu: take before image");
+                case R.id.take_picture_menu_item:
+                    Log.i(TAG, "menu: take before picture");
 
                     takePicture();
 
@@ -254,7 +245,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
 
                     Log.i(TAG, "Calling: (" + item.getOrder() + ") " + contact.getName() + " " + contact.getPhoneNumber());
 
-                    proposeAToast("Calling: (" + item.getOrder() + ") " + contact.getName() + " " + contact.getPhoneNumber());
+                    proposeAToast(R.string.calling_name_phone, contact.getName(), contact.getPhoneNumber());
 
                     makeCall(contact.getPhoneNumber());
 
@@ -280,7 +271,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
     }
 
     /**
-     * Launch the image capture intent.
+     * Launch the picture capture intent.
      */
     private void takePicture() {
         Intent intent = new Intent(this, CameraActivity.class);
@@ -318,7 +309,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
         SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(STATE_VIDEOS, gson.toJson(videoPaths));
-        editor.putString(STATE_PICTURES, gson.toJson(imagePaths));
+        editor.putString(STATE_IMAGES, gson.toJson(imagePaths));
         editor.putString(STATE_CONTACTS, gson.toJson(contacts));
         editor.putString(STATE_EVENT, url);
         editor.putString(STATE_EVENT_NAME, eventName);
@@ -347,7 +338,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
         captionInstagram = sharedPref.getString(STATE_EVENT_INSTAGRAM_CAPTION, null);
         captionTwitter = sharedPref.getString(STATE_EVENT_TWITTER_CAPTION, null);
         String serializedVideoPaths = sharedPref.getString(STATE_VIDEOS, "[]");
-        String serializedImagePaths = sharedPref.getString(STATE_PICTURES, "[]");
+        String serializedImagePaths = sharedPref.getString(STATE_IMAGES, "[]");
         String serializedContacts = sharedPref.getString(STATE_CONTACTS, "[]");
 
         Gson gson = new Gson();
@@ -487,15 +478,6 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
         updateTextField(R.id.twitterTextView, captionTwitter, captionTwitter != null ? Color.WHITE : null);
     }
 
-    /**
-     * Send a toast
-     *
-     * @param message Message to display
-     */
-    public void proposeAToast(String message) {
-        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
-    }
-
     @Override
     public void getEventDone(BrilleappenClient client, JSONObject result) {
         try {
@@ -549,7 +531,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                proposeAToast("Uploading file ");
+                proposeAToast(R.string.uploading_file);
             }
         });
         client = new BrilleappenClient(this, url, username, password);
@@ -563,7 +545,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
             public void run() {
                 ProgressBar progressBar = (ProgressBar)findViewById(R.id.progressBar);
                 progressBar.setVisibility(View.INVISIBLE);
-                proposeAToast("File delivered!");
+                proposeAToast(R.string.file_uploaded);
             }
         });
     }
@@ -591,5 +573,16 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
     @Override
     public void createEventDone(BrilleappenClient client, JSONObject result) {
         // Not implemented
+    }
+
+    private void listFiles() {
+        Log.i(TAG, "------------");
+
+        File f = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), MainActivity.FILE_DIRECTORY);
+        Log.i(TAG, "Listing files in: " + f.getAbsolutePath());
+
+        getDirectoryListing(f);
+
+        Log.i(TAG, "------------");
     }
 }

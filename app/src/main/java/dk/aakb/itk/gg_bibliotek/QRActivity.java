@@ -8,6 +8,7 @@ import android.hardware.Camera;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.FrameLayout;
+import android.widget.TextView;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.BinaryBitmap;
@@ -23,7 +24,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-public class QRActivity extends Activity {
+public class QRActivity extends BaseActivity {
     private static final String TAG = "QRActivity";
     private static final int   SCANS_PER_SEC = 6;
 
@@ -83,6 +84,7 @@ public class QRActivity extends Activity {
                 multiFormatReader.reset();
             }
             if (result != null) {
+                proposeAToast(R.string.qr_code_scanned);
                 Log.i(TAG, "Result: " + result.getText());
 
                 // Add path to file as result
@@ -121,6 +123,14 @@ public class QRActivity extends Activity {
         qrPreview = new QRPreview(this, camera, previewCallback);
         FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
         preview.addView(qrPreview);
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                TextView qrCodeInfo = (TextView) findViewById(R.id.qrCodeInfo);
+                qrCodeInfo.setText(R.string.scanning_qr_code);
+            }
+        });
     }
 
     /**
