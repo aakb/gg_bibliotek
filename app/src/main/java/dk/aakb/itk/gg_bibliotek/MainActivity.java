@@ -57,12 +57,14 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
     private ArrayList<String> imagePaths = new ArrayList<>();
     private ArrayList<String> videoPaths = new ArrayList<>();
     private ArrayList<Contact> contacts = new ArrayList<>();
-    private String url = null;
+    private String uploadFileUrl = null;
     private String username;
     private String password;
     private String eventName;
     private String captionTwitter;
     private String captionInstagram;
+    private String eventUrl;
+    private boolean isOffline;
 
     int selectedMenu = 0;
 
@@ -78,6 +80,8 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        isOffline = true;
 
         // Requests a voice menu on this activity. As for any other
         // window feature, be sure to request this before
@@ -101,7 +105,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
 
         restoreState();
 
-        if (url != null) {
+        if (uploadFileUrl != null) {
             selectedMenu = MENU_MAIN;
 
             // Set the main activity view.
@@ -119,12 +123,6 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
         listFiles();
 
         gestureDetector = new GestureDetector(this).setBaseListener(this);
-
-        // Change progress bar color to white
-        ProgressBar progressbar = (ProgressBar) findViewById(R.id.progressBar);
-        int color = Color.argb(255, 255, 255, 255);
-        progressbar.getIndeterminateDrawable().setColorFilter(color, PorterDuff.Mode.SRC_IN);
-        progressbar.getProgressDrawable().setColorFilter(color, PorterDuff.Mode.SRC_IN);
     }
 
     public boolean onGenericMotionEvent(MotionEvent event) {
@@ -236,15 +234,6 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
                     recordVideo();
 
                     break;
-                case R.id.confirm_cancel:
-                    Log.i(TAG, "menu: Confirm: cancel and exit");
-
-                    cleanDirectory();
-                    deleteState();
-
-                    finish();
-
-                    break;
                 case R.id.contacts_menu_item:
                     Log.i(TAG, "menu: make call");
 
@@ -318,7 +307,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
         editor.putString(STATE_VIDEOS, gson.toJson(videoPaths));
         editor.putString(STATE_IMAGES, gson.toJson(imagePaths));
         editor.putString(STATE_CONTACTS, gson.toJson(contacts));
-        editor.putString(STATE_EVENT, url);
+        editor.putString(STATE_EVENT, uploadFileUrl);
         editor.putString(STATE_EVENT_NAME, eventName);
         editor.putString(STATE_EVENT_INSTAGRAM_CAPTION, captionInstagram);
         editor.putString(STATE_EVENT_TWITTER_CAPTION, captionTwitter);
@@ -340,7 +329,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
      */
     private void restoreState() {
         SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
-        url = sharedPref.getString(STATE_EVENT, null);
+        uploadFileUrl = sharedPref.getString(STATE_EVENT, null);
         eventName = sharedPref.getString(STATE_EVENT_NAME, null);
         captionInstagram = sharedPref.getString(STATE_EVENT_INSTAGRAM_CAPTION, null);
         captionTwitter = sharedPref.getString(STATE_EVENT_TWITTER_CAPTION, null);
@@ -353,52 +342,11 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
         imagePaths = gson.fromJson(serializedImagePaths, new TypeToken<ArrayList<String>>() {}.getType());
         contacts = gson.fromJson(serializedContacts, new TypeToken<ArrayList<Contact>>() {}.getType());
 
-        Log.i(TAG, "Restored url: " + url);
+        Log.i(TAG, "Restored uploadFileUrl: " + uploadFileUrl);
         Log.i(TAG, "Restored name: " + eventName);
         Log.i(TAG, "Restored imagePaths: " + imagePaths);
         Log.i(TAG, "Restored videoPaths: " + videoPaths);
         Log.i(TAG, "Restored contacts: " + contacts);
-    }
-
-    /**
-     * Empty the directory.
-     */
-    private void cleanDirectory() {
-        File f = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), FILE_DIRECTORY);
-        Log.i(TAG, "Cleaning directory: " + f.getAbsolutePath());
-
-        File[] files = f.listFiles();
-        if (files != null && files.length > 0) {
-            for (File inFile : files) {
-                boolean success = inFile.delete();
-                if (!success) {
-                    Log.e(TAG, "file: " + inFile + " was not deleted (continuing).");
-                }
-            }
-        } else {
-            Log.i(TAG, "directory empty or does not exist.");
-        }
-    }
-
-    /**
-     * List all files in f.
-     *
-     * @param f file to list
-     */
-    private void getDirectoryListing(File f) {
-        File[] files = f.listFiles();
-        if (files != null && files.length > 0) {
-            for (File inFile : files) {
-                if (inFile.isDirectory()) {
-                    Log.i(TAG, "(dir) " + inFile);
-                    getDirectoryListing(inFile);
-                } else {
-                    Log.i(TAG, "" + inFile);
-                }
-            }
-        } else {
-            Log.i(TAG, "directory empty or does not exist.");
-        }
     }
 
     /**
@@ -435,14 +383,19 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
 
             try {
                 JSONObject jResult = new JSONObject(result);
-                String eventUrl = jResult.getString("url");
+                eventUrl = jResult.getString("url");
 
                 selectedMenu = MENU_MAIN;
 
                 updatePanelMenu();
 
-                client = new BrilleappenClient(this, eventUrl, username, password);
-                client.getEvent();
+                if (isOffline) {
+                    setOfflineEvent();
+                }
+                else {
+                    client = new BrilleappenClient(this, eventUrl, username, password);
+                    client.getEvent();
+                }
             }
             catch (JSONException e) {
                 Log.e(TAG, e.getMessage());
@@ -485,6 +438,16 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
         updateTextField(R.id.twitterTextView, captionTwitter, captionTwitter != null ? Color.WHITE : null);
     }
 
+    public void setOfflineEvent() {
+        captionInstagram = null;
+        captionTwitter = null;
+        eventName = "offline";
+        contacts = new ArrayList<>();
+        uploadFileUrl = null;
+        imagePaths = new ArrayList<>();
+        videoPaths = new ArrayList<>();
+    }
+
     @Override
     public void getEventDone(BrilleappenClient client, JSONObject result) {
         try {
@@ -502,6 +465,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
                 eventName = result.getJSONArray("title").getJSONObject(0).getString("value");
             }
 
+            contacts = new ArrayList<>();
             if (result.getJSONArray("field_gg_contact_people").length() > 0) {
                 JSONArray jsonArray = result.getJSONArray("field_gg_contact_people");
                 for (int i = 0; i < jsonArray.length(); i++) {
@@ -512,7 +476,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
                 Log.i(TAG, contacts.toString());
             }
 
-            url = result.getString("add_file_url");
+            uploadFileUrl = result.getString("add_file_url");
 
             saveState();
 
@@ -520,7 +484,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    if (url != null) {
+                    if (uploadFileUrl != null) {
                         // Set the main activity view.
                         setContentView(R.layout.activity_layout);
                     }
@@ -535,14 +499,22 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
     }
 
     private void sendFile(String path, boolean share) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                proposeAToast(R.string.uploading_file);
-            }
-        });
-        client = new BrilleappenClient(this, url, username, password);
-        client.sendFile(new File(path), share);
+        if (isOffline) {
+            proposeAToast(R.string.is_offline);
+
+            // Save for later delivery
+
+        }
+        else {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    proposeAToast(R.string.uploading_file);
+                }
+            });
+            client = new BrilleappenClient(this, uploadFileUrl, username, password);
+            client.sendFile(new File(path), share);
+        }
     }
 
     @Override
@@ -550,7 +522,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                ProgressBar progressBar = (ProgressBar)findViewById(R.id.progressBar);
+                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar);
                 progressBar.setVisibility(View.INVISIBLE);
                 proposeAToast(R.string.file_uploaded);
             }
@@ -565,7 +537,8 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
             public void run() {
                 ProgressBar progressBar = (ProgressBar)findViewById(R.id.progressBar);
                 progressBar.setVisibility(View.VISIBLE);
-                progressBar.getIndeterminateDrawable().setColorFilter(Color.WHITE, android.graphics.PorterDuff.Mode.MULTIPLY);
+//                progressBar.getIndeterminateDrawable().setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
+                progressBar.getProgressDrawable().setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
                 progressBar.setMax(max);
                 progressBar.setProgress(progress);
             }
@@ -580,6 +553,27 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
     @Override
     public void createEventDone(BrilleappenClient client, JSONObject result) {
         // Not implemented
+    }
+
+    /**
+     * List all files in f.
+     *
+     * @param f file to list
+     */
+    private void getDirectoryListing(File f) {
+        File[] files = f.listFiles();
+        if (files != null && files.length > 0) {
+            for (File inFile : files) {
+                if (inFile.isDirectory()) {
+                    Log.i(TAG, "(dir) " + inFile);
+                    getDirectoryListing(inFile);
+                } else {
+                    Log.i(TAG, "" + inFile);
+                }
+            }
+        } else {
+            Log.i(TAG, "directory empty or does not exist.");
+        }
     }
 
     private void listFiles() {

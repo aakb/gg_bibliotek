@@ -246,7 +246,6 @@ public class CameraActivity extends BaseActivity implements GestureDetector.Base
 
         if (camera != null) {
             camera.stopPreview();
-            cameraPreview.release();
             camera.release();        // release the camera for other applications
             camera = null;
         }

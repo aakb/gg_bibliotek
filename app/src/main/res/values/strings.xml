@@ -30,4 +30,6 @@
     <string name="swipe_actions">Swipe FORWARD to INSTASHARE.\nSwipe BACK to ARCHIVE.\nSwipe DOWN to CANCEL.\n"</string>
     <string name="qr_code_scanned">QR code scanned</string>
     <string name="scanning_qr_code">Scanning QR code</string>
+
+    <string name="is_offline">Device is offline</string>
 </resources>
