@@ -42,7 +42,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceSmall"
-                android:text="@string/hashtags_instagram"
+                android:text="@string/caption_instagram"
                 android:id="@+id/textView3" />
 
             <TextView
@@ -62,7 +62,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceSmall"
-                android:text="@string/hashtags_twitter"
+                android:text="@string/caption_twitter"
                 android:id="@+id/textView" />
 
             <TextView

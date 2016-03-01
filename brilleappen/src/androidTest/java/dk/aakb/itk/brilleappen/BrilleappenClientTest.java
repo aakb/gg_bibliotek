@@ -1,4 +1,4 @@
-package dk.aakb.itk.gg_bibliotek;
+package dk.aakb.itk.brilleappen;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;
