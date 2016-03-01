@@ -157,12 +157,20 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
             getMenuInflater().inflate(R.menu.main, menu);
 
             for (int i = 0; i < contacts.size(); i++) {
-                menu.findItem(R.id.contacts_menu_item).getSubMenu().add(R.id.main_menu_group_main, R.id.contacts_menu_item, i, contacts.get(i).getName());
+                menu.findItem(R.id.make_call_menu_item).getSubMenu().add(R.id.main_menu_group_main, R.id.contacts_menu_item, i, contacts.get(i).getName());
             }
 
             panelMenu = menu;
 
             updatePanelMenu();
+
+            // Hide the finish_menu when using voice commands.
+            if (featureId == WindowUtils.FEATURE_VOICE_COMMANDS) {
+                menu.findItem(R.id.finish_menu_item).setVisible(false);
+            }
+            else {
+                menu.findItem(R.id.finish_menu_item).setVisible(true);
+            }
 
             return true;
         }
@@ -176,13 +184,21 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
         if (featureId == WindowUtils.FEATURE_VOICE_COMMANDS ||
                 featureId == Window.FEATURE_OPTIONS_PANEL) {
 
-            if (menu.findItem(R.id.contacts_menu_item).getSubMenu().size() <= 0) {
+            if (menu.findItem(R.id.make_call_menu_item).getSubMenu().size() <= 0) {
                 for (int i = 0; i < contacts.size(); i++) {
-                    menu.findItem(R.id.contacts_menu_item).getSubMenu().add(R.id.main_menu_group_main, R.id.contacts_menu_item, i, contacts.get(i).getName());
+                    menu.findItem(R.id.make_call_menu_item).getSubMenu().add(R.id.main_menu_group_main, R.id.contacts_menu_item, i, contacts.get(i).getName());
                 }
             }
 
             updatePanelMenu();
+        }
+
+        // Hide the finish_menu when using voice commands.
+        if (featureId == WindowUtils.FEATURE_VOICE_COMMANDS) {
+            menu.findItem(R.id.finish_menu_item).setVisible(false);
+        }
+        else {
+            menu.findItem(R.id.finish_menu_item).setVisible(true);
         }
 
         return super.onPreparePanel(featureId, view, menu);
@@ -576,6 +592,4 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
     public void createEventDone(BrilleappenClient client, JSONObject result) {
         // Not implemented
     }
-
-
 }
