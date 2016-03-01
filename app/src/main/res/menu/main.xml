@@ -13,10 +13,15 @@
             android:id="@+id/finish_menu_item"
             android:title="@string/finish" />
         <item
-            android:id="@+id/contacts_menu_item"
+            android:id="@+id/make_call_menu_item"
             android:title="@string/call">
 
-            <menu></menu>
+            <menu>
+                <item
+                    android:id="@+id/contacts_menu_item"
+                    android:orderInCategory="-1"
+                    android:visible="false"/>
+            </menu>
         </item>
     </group>
     <group

@@ -154,7 +154,7 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
             getMenuInflater().inflate(R.menu.main, menu);
 
             for (int i = 0; i < contacts.size(); i++) {
-                menu.findItem(R.id.contacts_menu_item).getSubMenu().add(R.id.main_menu_group_main, R.id.contacts_menu_item, i, contacts.get(i).getName());
+                menu.findItem(R.id.make_call_menu_item).getSubMenu().add(R.id.main_menu_group_main, R.id.contacts_menu_item, i, contacts.get(i).getName());
             }
 
             panelMenu = menu;
@@ -181,9 +181,9 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
         if (featureId == WindowUtils.FEATURE_VOICE_COMMANDS ||
                 featureId == Window.FEATURE_OPTIONS_PANEL) {
 
-            if (menu.findItem(R.id.contacts_menu_item).getSubMenu().size() <= 0) {
+            if (menu.findItem(R.id.make_call_menu_item).getSubMenu().size() <= 0) {
                 for (int i = 0; i < contacts.size(); i++) {
-                    menu.findItem(R.id.contacts_menu_item).getSubMenu().add(R.id.main_menu_group_main, R.id.contacts_menu_item, i, contacts.get(i).getName());
+                    menu.findItem(R.id.make_call_menu_item).getSubMenu().add(R.id.main_menu_group_main, R.id.contacts_menu_item, i, contacts.get(i).getName());
                 }
             }
 
