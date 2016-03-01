@@ -4,9 +4,6 @@ import android.os.AsyncTask;
 import android.util.Base64;
 import android.util.Log;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -64,9 +61,9 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
                 _sendFile(file, share);
                 break;
             case NOTIFY_FILE:
-                JSONObject result = (JSONObject)args[1];
+                Media media = (Media)args[1];
                 String[] types = (String[])args[2];
-                _notifyFile(result, types);
+                _notifyFile(media, types);
                 break;
         }
         return true;
@@ -88,15 +85,15 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
         execute(Execute.SEND_FILE, file, share);
     }
 
-    public void notifyFile(JSONObject result, String[] types) {
-        execute(Execute.NOTIFY_FILE, result, types);
+    public void notifyFile(Media media, String[] types) {
+        execute(Execute.NOTIFY_FILE, media, types);
     }
 
-    public void notifyFile(JSONObject result) {
-        notifyFile(result, null);
+    public void notifyFile(Media media) {
+        notifyFile(media, null);
     }
 
-    private void _createEvent(String title, String type, double lat, double lng) {
+    private void _createEvent(final String title, final String type, final double lat, final double lng) {
         try {
             URL url = new URL(this.url);
             HttpURLConnection connection = (HttpURLConnection)url.openConnection();
@@ -112,27 +109,31 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
             connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
             DataOutputStream dos = new DataOutputStream(connection.getOutputStream());
-            JSONObject data = new JSONObject();
+            HashMap<String, Object> data = new HashMap<>();
             data.put("title", title);
             data.put("type", type);
             if (lat != Double.MIN_VALUE && lng != Double.MIN_VALUE) {
                 data.put("geolocation", new double[]{lat, lng});
             }
-            dos.writeBytes(data.toString());
+            dos.writeBytes(Util.toJson(data));
             dos.flush();
             dos.close();
 
             String response = getResponse(connection, 201);
 
-            JSONObject result = null;
+            String eventUrl = null;
+            boolean success = false;
+
             try {
-                result = new JSONObject(response);
+                Map<String, Object> values = Util.getValues(response);
+                eventUrl = values.containsKey("url") ? (String)values.get("url") : null;
+                success = values.containsKey("status") && values.get("status") == "OK";
             }
-            catch (JSONException e) {
+            catch (Exception e) {
                 Log.e(TAG, e.getMessage());
             }
 
-            listener.createEventDone(this, result);
+            listener.createEventDone(this, success, eventUrl);
         }
         catch (Exception e) {
             Log.e(TAG, e.getMessage());
@@ -153,15 +154,17 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
 
             String response = getResponse(connection);
 
-            JSONObject result = null;
+            boolean success = false;
+            Event event = null;
             try {
-                result = new JSONObject(response);
+                event = new Event(response);
+                success = true;
             }
-            catch (JSONException e) {
+            catch (Exception e) {
                 Log.e(TAG, e.getMessage());
             }
 
-            listener.getEventDone(this, result);
+            listener.getEventDone(this, success, event);
         }
         catch (Exception e) {
             Log.e(TAG, e.getMessage());
@@ -203,9 +206,21 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
             int serverResponseCode = connection.getResponseCode();
             String response = getResponse(connection);
 
-            JSONObject mainObject = new JSONObject(response);
+            Media media = null;
+            boolean success = false;
+//            String notifyUrl = null;
+            try {
+                media = new Media(response);
+                success = true;
+//                HashMap<String, Object> values = Util.getValues(response);
+//                success = values.containsKey("status") && values.get("status") == "OK";
+//                notifyUrl = values.containsKey("notify_url") ? (String)values.get("notify_url") : null;
+            }
+            catch (Exception e) {
+                Log.e(TAG, e.getMessage());
+            }
 
-            listener.sendFileDone(this, mainObject);
+            listener.sendFileDone(this, success, media);
 
             Log.i(TAG, serverResponseCode + ": " + response);
         } catch (Throwable t) {
@@ -213,9 +228,9 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
         }
     }
 
-    private void _notifyFile(JSONObject clientResult, final String[] types) {
+    private void _notifyFile(Media media, final String[] types) {
         try {
-            String notifyUrl = clientResult.getString("notify_url");
+            String notifyUrl = media.notifyUrl;
             Map<String, Object> query = new HashMap<String, Object>() {{
                put("types", types);
             }};
@@ -236,9 +251,10 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
             int serverResponseCode = connection.getResponseCode();
             String response = getResponse(connection);
 
-            JSONObject result = new JSONObject(response);
+            Map<String, Object> values = Util.getValues(response);
+            boolean success = values.containsKey("status") && values.get("status") == "OK";
 
-            listener.notifyFileDone(this, result);
+            listener.notifyFileDone(this, success, media);
 
             Log.i(TAG, serverResponseCode + ": " + response);
         } catch (Throwable t) {
@@ -266,7 +282,7 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
             bufferSize = Math.min(bytesAvailable, maxBufferSize);
             bytesRead = fileInputStream.read(buffer, 0, bufferSize);
 
-            listener.sendFileProgress(this, totalBytesRead, totalBytesAvailable);
+            listener.sendFileProgress(this, file, totalBytesRead, totalBytesAvailable);
         }
 
         fileInputStream.close();
