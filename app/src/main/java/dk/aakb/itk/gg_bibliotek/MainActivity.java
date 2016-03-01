@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.AssetManager;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -124,6 +125,12 @@ public class MainActivity extends Activity implements BrilleappenClientListener,
         Log.i(TAG, "------------");
 
         gestureDetector = new GestureDetector(this).setBaseListener(this);
+
+        // Change progress bar color to white
+        ProgressBar progressbar = (ProgressBar) findViewById(R.id.progressBar);
+        int color = Color.argb(255, 255, 255, 255);
+        progressbar.getIndeterminateDrawable().setColorFilter(color, PorterDuff.Mode.SRC_IN);
+        progressbar.getProgressDrawable().setColorFilter(color, PorterDuff.Mode.SRC_IN);
     }
 
     public boolean onGenericMotionEvent(MotionEvent event) {
