@@ -31,6 +31,7 @@ import java.util.Properties;
 
 import dk.aakb.itk.brilleappen.BrilleappenClient;
 import dk.aakb.itk.brilleappen.BrilleappenClientListener;
+import dk.aakb.itk.brilleappen.ContactPerson;
 import dk.aakb.itk.brilleappen.Event;
 import dk.aakb.itk.brilleappen.Media;
 
@@ -449,6 +450,10 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
                 this.eventName = event.title;
                 this.captionTwitter = event.twitterCaption;
                 this.captionInstagram = event.instagramCaption;
+                this.contacts = new ArrayList<Contact>();
+                for (ContactPerson cp : event.contactPersons) {
+                    contacts.add(new Contact(cp.name, cp.phone));
+                }
 
                 uploadFileUrl = event.addFileUrl;
 
