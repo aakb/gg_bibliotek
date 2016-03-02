@@ -336,4 +336,102 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
             return null;
         }
     }
+
+    // The synchronous stuff
+    public String createEventSync(String title, String type, double lat, double lng) {
+        BrilleappenClientListener originalListener = this.listener;
+
+        BrilleappenClientListenerSync syncListener = new BrilleappenClientListenerSync();
+        this.listener = syncListener;
+
+        _createEvent(title, type, lat, lng);
+
+        this.listener = originalListener;
+
+        return syncListener.url;
+    }
+
+    public String createEventSync(String title, String type) {
+        return createEventSync(title, type, Double.MIN_VALUE, Double.MIN_VALUE);
+    }
+
+    public Event getEventSync() {
+        BrilleappenClientListener originalListener = this.listener;
+
+        BrilleappenClientListenerSync syncListener = new BrilleappenClientListenerSync();
+        this.listener = syncListener;
+
+        _getEvent();
+
+        this.listener = originalListener;
+
+        return syncListener.event;
+    }
+
+    public Media sendFileSync(File file, boolean share) {
+        BrilleappenClientListener originalListener = this.listener;
+
+        BrilleappenClientListenerSync syncListener = new BrilleappenClientListenerSync();
+        this.listener = syncListener;
+
+        _sendFile(file, share);
+
+        this.listener = originalListener;
+
+        return syncListener.media;
+    }
+
+    private boolean successResult;
+
+    public boolean notifyFileSync(Media media, String[] types) {
+        BrilleappenClientListener originalListener = this.listener;
+
+        BrilleappenClientListenerSync syncListener = new BrilleappenClientListenerSync();
+        this.listener = syncListener;
+
+        _notifyFile(media, types);
+
+        this.listener = originalListener;
+
+        return syncListener.success;
+    }
+
+    public boolean notifyFileSync(Media media) {
+        return notifyFileSync(media, null);
+    }
+
+    class BrilleappenClientListenerSync implements BrilleappenClientListener {
+        public boolean success;
+        public String url;
+        public Event event;
+        public Media media;
+
+        @Override
+        public void createEventDone(BrilleappenClient client, boolean success, String url) {
+            this.success = success;
+            this.url = url;
+        }
+
+        @Override
+        public void getEventDone(BrilleappenClient client, boolean success, Event event) {
+            this.success = success;
+            this.event = event;
+        }
+
+        @Override
+        public void sendFileDone(BrilleappenClient client, boolean success, Media media) {
+            this.success = success;
+            this.media = media;
+        }
+
+        @Override
+        public void sendFileProgress(BrilleappenClient client, File file, int progress, int max) {
+        }
+
+        @Override
+        public void notifyFileDone(BrilleappenClient client, boolean success, Media media) {
+            this.success = success;
+            this.media = media;
+        }
+    }
 }
