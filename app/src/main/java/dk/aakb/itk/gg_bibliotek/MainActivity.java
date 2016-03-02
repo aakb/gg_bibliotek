@@ -23,17 +23,16 @@ import com.google.android.glass.view.WindowUtils;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Properties;
 
 import dk.aakb.itk.brilleappen.BrilleappenClient;
 import dk.aakb.itk.brilleappen.BrilleappenClientListener;
+import dk.aakb.itk.brilleappen.Event;
+import dk.aakb.itk.brilleappen.Media;
 
 public class MainActivity extends BaseActivity implements BrilleappenClientListener,  GestureDetector.BaseListener, NetworkConnectionListener  {
     public static final String FILE_DIRECTORY = "Bibliotek";
@@ -61,7 +60,6 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
     private String eventName;
     private String captionTwitter;
     private String captionInstagram;
-    private String eventUrl;
     private boolean isOffline;
     private int numberOfImages = 0;
     private int numberOfVideos = 0;
@@ -70,7 +68,8 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
 
     private GestureDetector gestureDetector;
     private Menu panelMenu;
-    BrilleappenClient client;
+    private BrilleappenClient client;
+    private Event event;
 
     /**
      * On create.
@@ -365,8 +364,8 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
             String result = data.getStringExtra("result");
 
             try {
-                JSONObject jResult = new JSONObject(result);
-                eventUrl = jResult.getString("url");
+                HashMap<String, String> values = new Gson().fromJson(result, new HashMap<String, String>() {}.getClass());
+                String eventUrl = values.get("url");
 
                 selectedMenu = MENU_MAIN;
 
@@ -380,7 +379,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
                     client.getEvent();
                 }
             }
-            catch (JSONException e) {
+            catch (Exception e) {
                 Log.e(TAG, e.getMessage());
             }
         }
@@ -430,34 +429,11 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
     }
 
     @Override
-    public void getEventDone(BrilleappenClient client, JSONObject result) {
+    public void getEventDone(BrilleappenClient client, boolean success, Event event) {
         try {
-            Log.i(TAG, result.toString());
+            this.event = event;
 
-            if (result.getJSONArray("field_gg_instagram_caption").length() > 0) {
-                captionInstagram = result.getJSONArray("field_gg_instagram_caption").getJSONObject(0).getString("value");
-            }
-
-            if (result.getJSONArray("field_gg_twitter_caption").length() > 0) {
-                captionTwitter = result.getJSONArray("field_gg_twitter_caption").getJSONObject(0).getString("value");
-            }
-
-            if (result.getJSONArray("title").length() > 0) {
-                eventName = result.getJSONArray("title").getJSONObject(0).getString("value");
-            }
-
-            contacts = new ArrayList<>();
-            if (result.getJSONArray("field_gg_contact_people").length() > 0) {
-                JSONArray jsonArray = result.getJSONArray("field_gg_contact_people");
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    JSONObject o = (JSONObject) jsonArray.get(i);
-                    contacts.add(new Contact(o.getString("name"), o.getString("telephone")));
-                }
-
-                Log.i(TAG, contacts.toString());
-            }
-
-            uploadFileUrl = result.getString("add_file_url");
+            uploadFileUrl = event.addFileUrl;
 
             saveState();
 
@@ -499,7 +475,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
     }
 
     @Override
-    public void sendFileDone(BrilleappenClient client, JSONObject result) {
+    public void sendFileDone(BrilleappenClient client, boolean success, Media media) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -511,7 +487,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
     }
 
     @Override
-    public void sendFileProgress(BrilleappenClient client, final int progress, final int max) {
+    public void sendFileProgress(BrilleappenClient client, File file, final int progress, final int max) {
         Log.i(TAG, String.format("sendFileProgress: %d/%d", progress, max));
         runOnUiThread(new Runnable() {
             @Override
@@ -527,12 +503,12 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
     }
 
     @Override
-    public void notifyFileDone(BrilleappenClient client, JSONObject result) {
+    public void notifyFileDone(BrilleappenClient client, boolean success, Media media) {
         // Not implemented
     }
 
     @Override
-    public void createEventDone(BrilleappenClient client, JSONObject result) {
+    public void createEventDone(BrilleappenClient client, boolean success, String eventUrl) {
         // Not implemented
     }
 
