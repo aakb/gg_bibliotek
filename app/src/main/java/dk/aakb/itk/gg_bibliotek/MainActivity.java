@@ -177,11 +177,11 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
             setMenuGroupVisibilty(menu);
 
             // Hide the finish_menu when using voice commands.
-            if (featureId == WindowUtils.FEATURE_VOICE_COMMANDS) {
-                menu.findItem(R.id.finish_menu_item).setVisible(false);
+            if (featureId == Window.FEATURE_OPTIONS_PANEL && selectedMenu == MENU_MAIN) {
+                menu.findItem(R.id.finish_menu_item).setVisible(true);
             }
             else {
-                menu.findItem(R.id.finish_menu_item).setVisible(true);
+                menu.findItem(R.id.finish_menu_item).setVisible(false);
             }
 
             return true;
