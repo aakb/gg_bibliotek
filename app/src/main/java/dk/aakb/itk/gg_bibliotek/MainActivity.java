@@ -269,7 +269,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
      * Launch the picture capture intent.
      */
     private void takePicture() {
-        Intent intent = new Intent(this, CameraActivity.class);
+        Intent intent = new Intent(this, PictureActivity.class);
         intent.putExtra("FILE_PREFIX", "");
         startActivityForResult(intent, TAKE_PICTURE_REQUEST);
     }
@@ -391,9 +391,8 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
                     client.getEvent();
                 }
             }
-            catch (Exception e) {
-                e.printStackTrace();
-                Log.e(TAG, e.getMessage());
+            catch (Throwable t) {
+                Log.e(TAG, t.getMessage() != null ? t.getMessage() : t.getClass().toString());
             }
         }
 

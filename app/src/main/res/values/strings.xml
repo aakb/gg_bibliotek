@@ -34,4 +34,5 @@
     <string name="is_offline_file_not_sent">Offline - file saved for later</string>
     <string name="offline_event">Offline event</string>
     <string name="no_camera">The camera is not available</string>
+    <string name="tap_to_stop_recording">"Tap to stop recording</string>
 </resources>

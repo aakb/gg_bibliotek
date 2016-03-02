@@ -1,16 +1,13 @@
 package dk.aakb.itk.gg_bibliotek;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.hardware.Camera;
 import android.media.AudioManager;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.widget.FrameLayout;
@@ -21,25 +18,12 @@ import com.google.android.glass.touchpad.GestureDetector;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class VideoActivity extends Activity implements GestureDetector.BaseListener {
-    private static final String TAG = "VideoActivity";
-
-    private int state;
+public class VideoActivity extends CameraActivity implements GestureDetector.BaseListener {
     private static final int STATE_RECORDING = 1;
     private static final int STATE_ACTION = 2;
-
-    private Camera camera;
-    private CameraPreview cameraPreview;
-    private TextView textField;
-    private String filePrefix;
-
-    private AudioManager audioManager;
-    private GestureDetector gestureDetector;
 
     private TextView durationText;
     private MediaRecorder mediaRecorder;
@@ -55,48 +39,22 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
      */
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        TAG = "VideoActivity";
+        contentView = R.layout.activity_camera_video;
+
         super.onCreate(savedInstanceState);
 
-        Log.i(TAG, "Launching activity");
+        textField.setText(R.string.tap_to_stop_recording);
 
-        // Get file prefix
-        Intent intent = getIntent();
-        filePrefix = intent.getStringExtra("FILE_PREFIX");
-
-        setContentView(R.layout.activity_camera_video);
-
-        durationText = (TextView) findViewById(R.id.text_camera_duration);
-        textField = (TextView) findViewById(R.id.text_camera_helptext);
-
-        textField.setText("Tap to stop recording");
-
-        if (!checkCameraHardware(this)) {
-            Log.i(TAG, "no camera");
-            finish();
-            return;
-        }
-
-        camera = getCameraInstance();
-        if (camera == null) {
-            finish();
-            return;
-        }
-
-        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        gestureDetector = new GestureDetector(this).setBaseListener(this);
-
-        // Create our Preview view and set it as the content of our activity.
-        cameraPreview = new CameraPreview(this, camera);
-        FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
-        preview.addView(cameraPreview);
-
-        state = STATE_RECORDING;
+        durationText = (TextView)findViewById(R.id.text_camera_duration);
 
         // Reset timer executions.
         timerExecutions = 0;
-        durationText = (TextView) findViewById(R.id.text_camera_duration);
+        durationText = (TextView)findViewById(R.id.text_camera_duration);
         launchUnlimitedVideo();
-    }
+
+        state = STATE_RECORDING;
+		}
 
     public boolean onGenericMotionEvent(MotionEvent event) {
         return gestureDetector.onMotionEvent(event);
@@ -223,7 +181,7 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
 
             // Step 4: Set output file
             Log.i(TAG, "set output file");
-            outputFile = getOutputVideoFile();
+            outputFile = getOutputFile("video", "mp4");
             mediaRecorder.setOutputFile(outputFile.getAbsolutePath());
 
             (new Timer()).schedule(new TimerTask() {
@@ -288,53 +246,6 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
     }
 
     /**
-     * A safe way to get an instance of the Camera object.
-     */
-    public static Camera getCameraInstance() {
-        Log.i(TAG, "getting camera instance...");
-        try {
-            return Camera.open(); // attempt to get a Camera instance
-        } catch (Exception e) {
-            Log.e(TAG, "could not getCameraInstance");
-            throw e;
-            // Camera is not available (in use or does not exist)
-        }
-    }
-
-    /**
-     * Check if this device has a camera
-     */
-    private boolean checkCameraHardware(Context context) {
-        // this device has a camera
-// no camera on this device
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA);
-    }
-
-    /**
-     * On pause.
-     */
-    @Override
-    protected void onPause() {
-        releaseTimer();
-        releaseMediaRecorder();
-        releaseCamera();
-
-        super.onPause();
-    }
-
-    /**
-     * On destroy.
-     */
-    @Override
-    protected void onDestroy() {
-        releaseTimer();
-        releaseMediaRecorder();
-        releaseCamera();
-
-        super.onDestroy();
-    }
-
-    /**
      * Release the media recorder.
      */
     private void releaseMediaRecorder() {
@@ -346,41 +257,9 @@ public class VideoActivity extends Activity implements GestureDetector.BaseListe
         }
     }
 
-    /**
-     * Release the camera.
-     */
-    private void releaseCamera() {
-        if (camera != null) {
-            camera.stopPreview();
-            camera.release();        // release the camera for other applications
-            camera = null;
-        }
-    }
-
     private void releaseTimer() {
         if (timer != null) {
             timer.cancel();
         }
-    }
-
-    /**
-     * Create a File for saving a video
-     */
-    private File getOutputVideoFile() {
-        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), MainActivity.FILE_DIRECTORY);
-
-        // Create the storage directory if it does not exist
-        if (!mediaStorageDir.exists()) {
-            if (!mediaStorageDir.mkdirs()) {
-                Log.d(TAG, "failed to create directory");
-                return null;
-            }
-        }
-
-        // Create a media file name
-        String timeStamp = new SimpleDateFormat("yyyy-MM-dd_HHmmss").format(new Date());
-        File mediaFile = new File(mediaStorageDir.getPath() + File.separator +
-                filePrefix + "_video_" + timeStamp + ".mp4");
-        return mediaFile;
     }
 }
