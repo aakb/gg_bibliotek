@@ -84,6 +84,8 @@ public class QRActivity extends BaseActivity {
                 multiFormatReader.reset();
             }
             if (result != null) {
+                releaseCamera();
+
                 proposeAToast(R.string.qr_code_scanned);
                 Log.i(TAG, "Result: " + result.getText());
 
@@ -118,6 +120,11 @@ public class QRActivity extends BaseActivity {
 
         // Create an instance of Camera
         camera = getCameraInstance();
+        if (camera == null) {
+            proposeAToast(R.string.no_camera);
+            finish();
+        }
+
 
         // Create our Preview view and set it as the content of our activity.
         qrPreview = new QRPreview(this, camera, previewCallback);

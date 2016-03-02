@@ -6,7 +6,6 @@ import android.content.SharedPreferences;
 import android.content.res.AssetManager;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
-import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -64,6 +63,8 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
     private String captionInstagram;
     private String eventUrl;
     private boolean isOffline;
+    private int numberOfImages = 0;
+    private int numberOfVideos = 0;
 
     int selectedMenu = 0;
 
@@ -82,9 +83,6 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
 
         (new NetworkConnection(this, this.getBaseContext())).execute();
 
-        // Requests a voice menu on this activity. As for any other
-        // window feature, be sure to request this before
-        // setContentView() is called
         getWindow().requestFeature(WindowUtils.FEATURE_VOICE_COMMANDS);
         getWindow().requestFeature(Window.FEATURE_OPTIONS_PANEL);
 
@@ -124,10 +122,12 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
         gestureDetector = new GestureDetector(this).setBaseListener(this);
     }
 
+    @Override
     public boolean onGenericMotionEvent(MotionEvent event) {
         return gestureDetector.onMotionEvent(event);
     }
 
+    @Override
     public boolean onGesture(Gesture gesture) {
         if (Gesture.TAP.equals(gesture)) {
             openOptionsMenu();
@@ -137,27 +137,44 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
         return false;
     }
 
-    /**
-     * On create panel menu.
-     *
-     * @param featureId the feature id
-     * @param menu      the menu to create
-     * @return boolean
-     */
     @Override
     public boolean onCreatePanelMenu(int featureId, Menu menu) {
+        panelMenu = menu;
+
         if (featureId == WindowUtils.FEATURE_VOICE_COMMANDS ||
                 featureId == Window.FEATURE_OPTIONS_PANEL) {
 
             getMenuInflater().inflate(R.menu.main, menu);
+        }
 
-            for (int i = 0; i < contacts.size(); i++) {
-                menu.findItem(R.id.make_call_menu_item).getSubMenu().add(R.id.main_menu_group_main, R.id.contacts_menu_item, i, contacts.get(i).getName());
+        if (updateMenu(menu, featureId)) {
+            return true;
+        }
+
+        // Pass through to super to setup touch menu.
+        return super.onCreatePanelMenu(featureId, menu);
+    }
+
+    @Override
+    public boolean onPreparePanel(int featureId, View view, Menu menu) {
+        updateMenu(menu, featureId);
+
+        return super.onPreparePanel(featureId, view, menu);
+    }
+
+    private boolean updateMenu(Menu menu, int featureId) {
+        if (featureId == WindowUtils.FEATURE_VOICE_COMMANDS ||
+                featureId == Window.FEATURE_OPTIONS_PANEL) {
+
+            // Add contacts menu, if not already added.
+            if (menu.findItem(R.id.make_call_menu_item).getSubMenu().size() <= 0) {
+                for (int i = 0; i < contacts.size(); i++) {
+                    menu.findItem(R.id.make_call_menu_item).getSubMenu().add(R.id.main_menu_group_main, R.id.contacts_menu_item, i, contacts.get(i).getName());
+                }
             }
 
-            panelMenu = menu;
-
-            updatePanelMenu();
+            // Update which group is visible.
+            setMenuGroupVisibilty(menu);
 
             // Hide the finish_menu when using voice commands.
             if (featureId == WindowUtils.FEATURE_VOICE_COMMANDS) {
@@ -169,42 +186,15 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
 
             return true;
         }
-
-        // Pass through to super to setup touch menu.
-        return super.onCreatePanelMenu(featureId, menu);
-    }
-
-    @Override
-    public boolean onPreparePanel(int featureId, View view, Menu menu) {
-        if (featureId == WindowUtils.FEATURE_VOICE_COMMANDS ||
-                featureId == Window.FEATURE_OPTIONS_PANEL) {
-
-            if (menu.findItem(R.id.make_call_menu_item).getSubMenu().size() <= 0) {
-                for (int i = 0; i < contacts.size(); i++) {
-                    menu.findItem(R.id.make_call_menu_item).getSubMenu().add(R.id.main_menu_group_main, R.id.contacts_menu_item, i, contacts.get(i).getName());
-                }
-            }
-
-            updatePanelMenu();
-        }
-
-        // Hide the finish_menu when using voice commands.
-        if (featureId == WindowUtils.FEATURE_VOICE_COMMANDS) {
-            menu.findItem(R.id.finish_menu_item).setVisible(false);
-        }
-        else {
-            menu.findItem(R.id.finish_menu_item).setVisible(true);
-        }
-
-        return super.onPreparePanel(featureId, view, menu);
+        return false;
     }
 
     /**
      * Update what menu is displayed.
      */
-    public void updatePanelMenu() {
-        panelMenu.setGroupVisible(R.id.main_menu_group_main, selectedMenu == MENU_MAIN);
-        panelMenu.setGroupVisible(R.id.main_menu_group_start, selectedMenu == MENU_START);
+    public void setMenuGroupVisibilty(Menu menu) {
+        menu.setGroupVisible(R.id.main_menu_group_main, selectedMenu == MENU_MAIN);
+        menu.setGroupVisible(R.id.main_menu_group_start, selectedMenu == MENU_START);
     }
 
     /**
@@ -380,7 +370,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
 
                 selectedMenu = MENU_MAIN;
 
-                updatePanelMenu();
+                setMenuGroupVisibilty(panelMenu);
 
                 if (isOffline) {
                     setOfflineEvent();
@@ -420,11 +410,11 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
      * Update the UI.
      */
     private void updateUI() {
-//        updateTextField(R.id.imageNumber, String.valueOf(imagePaths.size()), imagePaths.size() > 0 ? Color.WHITE : null);
-//        updateTextField(R.id.imageLabel, null, imagePaths.size() > 0 ? Color.WHITE : null);
+        updateTextField(R.id.imageNumber, String.valueOf(numberOfImages), numberOfImages > 0 ? Color.WHITE : null);
+        updateTextField(R.id.imageLabel, null, numberOfImages > 0 ? Color.WHITE : null);
 
-//        updateTextField(R.id.videoNumber, String.valueOf(videoPaths.size()), videoPaths.size() > 0 ? Color.WHITE : null);
-//        updateTextField(R.id.videoLabel, null, videoPaths.size() > 0 ? Color.WHITE : null);
+        updateTextField(R.id.videoNumber, String.valueOf(numberOfVideos), numberOfVideos > 0 ? Color.WHITE : null);
+        updateTextField(R.id.videoLabel, null, numberOfVideos > 0 ? Color.WHITE : null);
 
         updateTextField(R.id.eventIdentifier, eventName, eventName != null ? Color.WHITE : null);
         updateTextField(R.id.instagramTextView, captionInstagram, captionInstagram != null ? Color.WHITE : null);
@@ -528,7 +518,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
             public void run() {
                 ProgressBar progressBar = (ProgressBar)findViewById(R.id.progressBar);
                 progressBar.setVisibility(View.VISIBLE);
-//                progressBar.getIndeterminateDrawable().setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
+                progressBar.getIndeterminateDrawable().setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
                 progressBar.getProgressDrawable().setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
                 progressBar.setMax(max);
                 progressBar.setProgress(progress);
