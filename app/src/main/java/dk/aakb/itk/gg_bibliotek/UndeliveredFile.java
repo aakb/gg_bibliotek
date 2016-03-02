@@ -7,6 +7,12 @@ public class UndeliveredFile {
     private String eventUrl;
     private Event event;
 
+    public UndeliveredFile(Event event, String eventUrl, String filePath) {
+        this.event = event;
+        this.eventUrl = eventUrl;
+        this.filePath = filePath;
+    }
+
     public String getEventUrl() {
         return eventUrl;
     }

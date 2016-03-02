@@ -9,18 +9,18 @@ import java.util.Map;
 public class Event {
     public final String title;
     public final String addFileUrl;
-    public final List<ContactPerson> contactPeople;
+    public final List<ContactPerson> contactPersons;
 
     Event(String json) {
         Map values = Util.getValues(json);
         this.title = (String) Util.getDrupalValue(values, "title");
         this.addFileUrl = (String) values.get("add_file_url");
-        this.contactPeople = new ArrayList<>();
+        this.contactPersons = new ArrayList<>();
 
         try {
             List<LinkedTreeMap> list = (List) values.get("field_gg_contact_people");
             for (LinkedTreeMap item : list) {
-                this.contactPeople.add(new ContactPerson(item));
+                this.contactPersons.add(new ContactPerson(item));
             }
         } catch (Exception e) {
         }

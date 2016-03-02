@@ -55,6 +55,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
     private ArrayList<UndeliveredFile> undeliveredFiles;
     private ArrayList<Contact> contacts = new ArrayList<>();
     private String uploadFileUrl = null;
+    private String eventUrl;
     private String username;
     private String password;
     private String eventName;
@@ -170,10 +171,13 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
                 }
             }
 
+            // Hide menu if no contacts are available.
+            menu.findItem(R.id.make_call_menu_item).setVisible(contacts.size() > 0);
+
             // Update which group is visible.
             setMenuGroupVisibilty(menu);
 
-            // Hide the finish_menu when using voice commands.
+            // Hide the finish_menu from main_menu_group_main when using voice commands.
             if (featureId == Window.FEATURE_OPTIONS_PANEL && selectedMenu == MENU_MAIN) {
                 menu.findItem(R.id.finish_menu_item).setVisible(true);
             }
@@ -235,6 +239,12 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
                 case R.id.scan_event_menu_item:
                     Intent scanEventIntent = new Intent(this, QRActivity.class);
                     startActivityForResult(scanEventIntent, SCAN_EVENT_REQUEST);
+
+                    break;
+                case R.id.offline_event_menu_item:
+                    setOfflineEvent();
+                    isOffline = true;
+                    selectedMenu = MENU_MAIN;
 
                     break;
                 case R.id.finish_menu_item:
@@ -363,7 +373,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
 
             try {
                 HashMap<String, String> values = new Gson().fromJson(result, new HashMap<String, String>() {}.getClass());
-                String eventUrl = values.get("url");
+                eventUrl = values.get("url");
 
                 selectedMenu = MENU_MAIN;
 
@@ -428,37 +438,45 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
 
     @Override
     public void getEventDone(BrilleappenClient client, boolean success, Event event) {
-        try {
-            this.event = event;
+        if (success) {
+            try {
+                this.event = event;
 
-            uploadFileUrl = event.addFileUrl;
+                uploadFileUrl = event.addFileUrl;
 
-            saveState();
+                saveState();
 
-            // Update the UI
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    if (uploadFileUrl != null) {
-                        // Set the main activity view.
-                        setContentView(R.layout.activity_layout);
+                // Update the UI
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (uploadFileUrl != null) {
+                            // Set the main activity view.
+                            setContentView(R.layout.activity_layout);
+                        }
+
+                        updateUI();
                     }
-
-                    updateUI();
-                }
-            });
+                });
+            }
+            catch (Exception e) {
+                Log.e(TAG, e.getMessage());
+            }
         }
-        catch (Exception e) {
-            Log.e(TAG, e.getMessage());
+        else {
+            setOfflineEvent();
         }
     }
 
     private void sendFile(String path, boolean share) {
         if (isOffline) {
-            proposeAToast(R.string.is_offline);
-
-            // Save for later delivery
-
+            undeliveredFiles.add(new UndeliveredFile(event, eventUrl, path));
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    proposeAToast(R.string.is_offline_file_not_sent);
+                }
+            });
         }
         else {
             runOnUiThread(new Runnable() {
@@ -474,14 +492,28 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
 
     @Override
     public void sendFileDone(BrilleappenClient client, boolean success, Media media) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar);
-                progressBar.setVisibility(View.INVISIBLE);
-                proposeAToast(R.string.file_uploaded);
-            }
-        });
+        if (success) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar);
+                    progressBar.setVisibility(View.INVISIBLE);
+                    proposeAToast(R.string.file_uploaded);
+                }
+            });
+        }
+        else {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar);
+                    progressBar.setVisibility(View.INVISIBLE);
+                    proposeAToast(R.string.is_offline_file_not_sent);
+                    // @TODO: What is the path?
+                    undeliveredFiles.add(new UndeliveredFile(event, eventUrl, null));
+                }
+            });
+        }
     }
 
     @Override
