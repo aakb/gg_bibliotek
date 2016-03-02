@@ -35,10 +35,14 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
     private BrilleappenClientListener listener;
 
     public BrilleappenClient(BrilleappenClientListener listener, String url, String username, String password) {
+        this.listener = listener;
         this.url = url.replaceFirst("/+$", "");
         this.username = username;
         this.password = password;
-        this.listener = listener;
+    }
+
+    public BrilleappenClient(String url, String username, String password) {
+        this(null, url, username, password);
     }
 
     protected Boolean doInBackground(Object... args) {
@@ -128,14 +132,14 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
                 Map<String, Object> values = Util.getValues(response);
                 eventUrl = values.containsKey("url") ? (String)values.get("url") : null;
                 success = values.containsKey("status") && values.get("status") == "OK";
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 Log.e(TAG, e.getMessage());
             }
 
-            listener.createEventDone(this, success, eventUrl);
-        }
-        catch (Exception e) {
+            if (listener != null) {
+                listener.createEventDone(this, success, eventUrl);
+            }
+        } catch (Exception e) {
             Log.e(TAG, e.getMessage());
         }
     }
@@ -159,14 +163,14 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
             try {
                 event = new Event(response);
                 success = true;
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 Log.e(TAG, e.getMessage());
             }
 
-            listener.getEventDone(this, success, event);
-        }
-        catch (Exception e) {
+            if (listener != null) {
+                listener.getEventDone(this, success, event);
+            }
+        } catch (Exception e) {
             Log.e(TAG, e.getMessage());
         }
     }
@@ -208,19 +212,18 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
 
             Media media = null;
             boolean success = false;
-//            String notifyUrl = null;
             try {
-                media = new Media(response);
-                success = true;
-//                HashMap<String, Object> values = Util.getValues(response);
-//                success = values.containsKey("status") && values.get("status") == "OK";
-//                notifyUrl = values.containsKey("notify_url") ? (String)values.get("notify_url") : null;
-            }
-            catch (Exception e) {
+                if (serverResponseCode == 200) {
+                    media = new Media(response);
+                    success = true;
+                }
+            } catch (Exception e) {
                 Log.e(TAG, e.getMessage());
             }
 
-            listener.sendFileDone(this, success, media);
+            if (listener != null) {
+                listener.sendFileDone(this, success, media);
+            }
 
             Log.i(TAG, serverResponseCode + ": " + response);
         } catch (Throwable t) {
@@ -232,7 +235,7 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
         try {
             String notifyUrl = media.notifyUrl;
             Map<String, Object> query = new HashMap<String, Object>() {{
-               put("types", types);
+                put("types", types);
             }};
             URL url = getUrl(notifyUrl, query);
 
@@ -252,9 +255,11 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
             String response = getResponse(connection);
 
             Map<String, Object> values = Util.getValues(response);
-            boolean success = values.containsKey("status") && values.get("status") == "OK";
+            boolean success = values.containsKey("status") && "OK".equals(values.get("status"));
 
-            listener.notifyFileDone(this, success, media);
+            if (listener != null) {
+                listener.notifyFileDone(this, success, media);
+            }
 
             Log.i(TAG, serverResponseCode + ": " + response);
         } catch (Throwable t) {
@@ -282,7 +287,9 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
             bufferSize = Math.min(bytesAvailable, maxBufferSize);
             bytesRead = fileInputStream.read(buffer, 0, bufferSize);
 
-            listener.sendFileProgress(this, file, totalBytesRead, totalBytesAvailable);
+            if (listener != null) {
+                listener.sendFileProgress(this, file, totalBytesRead, totalBytesAvailable);
+            }
         }
 
         fileInputStream.close();
@@ -316,7 +323,7 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
     private URL getUrl(String url, Map<String, Object> query) {
         try {
             StringBuilder queryString = new StringBuilder();
-            for (Map.Entry<String, Object> entry: query.entrySet()) {
+            for (Map.Entry<String, Object> entry : query.entrySet()) {
                 if (queryString.length() > 0) {
                     queryString.append('&');
                 }
