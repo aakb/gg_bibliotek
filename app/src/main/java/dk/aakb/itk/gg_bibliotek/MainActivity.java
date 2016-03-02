@@ -375,7 +375,8 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
             String result = data.getStringExtra("result");
 
             try {
-                HashMap<String, String> values = new Gson().fromJson(result, new HashMap<String, String>() {}.getClass());
+
+                HashMap<String, String> values = (new Gson()).fromJson(result, new TypeToken<HashMap<String, String>>() {}.getType());
                 eventUrl = values.get("url");
 
                 selectedMenu = MENU_MAIN;
@@ -391,6 +392,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
                 }
             }
             catch (Exception e) {
+                e.printStackTrace();
                 Log.e(TAG, e.getMessage());
             }
         }
@@ -438,9 +440,15 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
 
     @Override
     public void getEventDone(BrilleappenClient client, boolean success, Event event) {
+        Log.i(TAG, "getEventDone (" + success + "): " + event);
+
         if (success) {
             try {
                 this.event = event;
+
+                this.eventName = event.title;
+                this.captionTwitter = event.twitterCaption;
+                this.captionInstagram = event.instagramCaption;
 
                 uploadFileUrl = event.addFileUrl;
 
@@ -460,6 +468,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
                 });
             }
             catch (Exception e) {
+                e.printStackTrace();
                 Log.e(TAG, e.getMessage());
             }
         }
