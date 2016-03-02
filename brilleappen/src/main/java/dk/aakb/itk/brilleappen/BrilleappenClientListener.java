@@ -7,7 +7,7 @@ public interface BrilleappenClientListener {
 
     void getEventDone(BrilleappenClient client, boolean success, Event event);
 
-    void sendFileDone(BrilleappenClient client, boolean success, Media media);
+    void sendFileDone(BrilleappenClient client, boolean success, File file, Media media);
 
     void sendFileProgress(BrilleappenClient client, File file, int progress, int max);
 

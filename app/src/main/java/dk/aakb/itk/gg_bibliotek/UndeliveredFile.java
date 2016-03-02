@@ -36,4 +36,9 @@ public class UndeliveredFile {
     public void setEvent(Event event) {
         this.event = event;
     }
+
+    @Override
+    public String toString() {
+        return "UndeliveredFile{" + filePath + "}";
+    }
 }

@@ -52,7 +52,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
     private static final int MENU_MAIN = 1;
     private static final int MENU_START = 0;
 
-    private ArrayList<UndeliveredFile> undeliveredFiles;
+    private ArrayList<UndeliveredFile> undeliveredFiles = new ArrayList<>();
     private ArrayList<Contact> contacts = new ArrayList<>();
     private String uploadFileUrl = null;
     private String eventUrl;
@@ -62,8 +62,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
     private String captionTwitter;
     private String captionInstagram;
     private boolean isOffline = false;
-    private int numberOfImages = 0;
-    private int numberOfVideos = 0;
+    private int numberOfFiles = 0;
 
     int selectedMenu = 0;
 
@@ -246,6 +245,10 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
                     isOffline = true;
                     selectedMenu = MENU_MAIN;
 
+                    setContentView(R.layout.activity_layout);
+
+                    updateUI();
+
                     break;
                 case R.id.finish_menu_item:
                     deleteState();
@@ -417,11 +420,8 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
      * Update the UI.
      */
     private void updateUI() {
-        updateTextField(R.id.imageNumber, String.valueOf(numberOfImages), numberOfImages > 0 ? Color.WHITE : null);
-        updateTextField(R.id.imageLabel, null, numberOfImages > 0 ? Color.WHITE : null);
-
-        updateTextField(R.id.videoNumber, String.valueOf(numberOfVideos), numberOfVideos > 0 ? Color.WHITE : null);
-        updateTextField(R.id.videoLabel, null, numberOfVideos > 0 ? Color.WHITE : null);
+        updateTextField(R.id.filesNumber, String.valueOf(numberOfFiles), numberOfFiles > 0 ? Color.WHITE : null);
+        updateTextField(R.id.filesLabel, null, numberOfFiles > 0 ? Color.WHITE : null);
 
         updateTextField(R.id.eventIdentifier, eventName, eventName != null ? Color.WHITE : null);
         updateTextField(R.id.instagramTextView, captionInstagram, captionInstagram != null ? Color.WHITE : null);
@@ -471,6 +471,8 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
     private void sendFile(String path, boolean share) {
         if (isOffline) {
             undeliveredFiles.add(new UndeliveredFile(event, eventUrl, path));
+            saveState();
+
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -491,7 +493,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
     }
 
     @Override
-    public void sendFileDone(BrilleappenClient client, boolean success, Media media) {
+    public void sendFileDone(BrilleappenClient client, boolean success, File file, Media media) {
         if (success) {
             runOnUiThread(new Runnable() {
                 @Override
@@ -503,14 +505,15 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
             });
         }
         else {
+            undeliveredFiles.add(new UndeliveredFile(event, eventUrl, file.getPath()));
+            saveState();
+
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar);
                     progressBar.setVisibility(View.INVISIBLE);
                     proposeAToast(R.string.is_offline_file_not_sent);
-                    // @TODO: What is the path?
-                    undeliveredFiles.add(new UndeliveredFile(event, eventUrl, null));
                 }
             });
         }

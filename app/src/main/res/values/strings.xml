@@ -1,8 +1,7 @@
 <resources>
     <string name="app_name">Dokk1 Event</string>
     <string name="countdown_default">…</string>
-    <string name="progress_image">Images</string>
-    <string name="progress_videos">Videos</string>
+    <string name="files_label">Files</string>
     <string name="event">Event: </string>
     <string name="init_event">Open menu to init event</string>
     <string name="no_media_files">No media files</string>

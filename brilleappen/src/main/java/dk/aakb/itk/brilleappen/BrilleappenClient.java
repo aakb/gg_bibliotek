@@ -222,7 +222,7 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
             }
 
             if (listener != null) {
-                listener.sendFileDone(this, success, media);
+                listener.sendFileDone(this, success, file, media);
             }
 
             Log.i(TAG, serverResponseCode + ": " + response);
@@ -405,6 +405,7 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
         public String url;
         public Event event;
         public Media media;
+        public File file;
 
         @Override
         public void createEventDone(BrilleappenClient client, boolean success, String url) {
@@ -419,9 +420,10 @@ public class BrilleappenClient extends AsyncTask<Object, Void, Boolean> {
         }
 
         @Override
-        public void sendFileDone(BrilleappenClient client, boolean success, Media media) {
+        public void sendFileDone(BrilleappenClient client, boolean success, File file, Media media) {
             this.success = success;
             this.media = media;
+            this.file = file;
         }
 
         @Override
