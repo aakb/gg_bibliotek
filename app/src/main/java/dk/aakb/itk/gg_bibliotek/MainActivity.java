@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.content.res.AssetManager;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
+import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -35,7 +36,7 @@ import java.util.Properties;
 import dk.aakb.itk.brilleappen.BrilleappenClient;
 import dk.aakb.itk.brilleappen.BrilleappenClientListener;
 
-public class MainActivity extends BaseActivity implements BrilleappenClientListener,  GestureDetector.BaseListener  {
+public class MainActivity extends BaseActivity implements BrilleappenClientListener,  GestureDetector.BaseListener, NetworkConnectionListener  {
     public static final String FILE_DIRECTORY = "Bibliotek";
 
     private static final String TAG = "bibliotek MainActivity";
@@ -43,8 +44,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
     private static final int RECORD_VIDEO_CAPTURE_REQUEST = 102;
     private static final int SCAN_EVENT_REQUEST = 103;
 
-    private static final String STATE_VIDEOS = "videos";
-    private static final String STATE_IMAGES = "images";
+    private static final String STATE_UNDELIVERED_FILES = "undelivered_files";
     private static final String STATE_CONTACTS = "contacts";
     private static final String STATE_EVENT = "url";
     private static final String STATE_EVENT_NAME = "event_name";
@@ -54,8 +54,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
     private static final int MENU_MAIN = 1;
     private static final int MENU_START = 0;
 
-    private ArrayList<String> imagePaths = new ArrayList<>();
-    private ArrayList<String> videoPaths = new ArrayList<>();
+    private ArrayList<UndeliveredFile> undeliveredFiles;
     private ArrayList<Contact> contacts = new ArrayList<>();
     private String uploadFileUrl = null;
     private String username;
@@ -81,7 +80,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        isOffline = true;
+        (new NetworkConnection(this, this.getBaseContext())).execute();
 
         // Requests a voice menu on this activity. As for any other
         // window feature, be sure to request this before
@@ -304,8 +303,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
 
         SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString(STATE_VIDEOS, gson.toJson(videoPaths));
-        editor.putString(STATE_IMAGES, gson.toJson(imagePaths));
+        editor.putString(STATE_UNDELIVERED_FILES, gson.toJson(undeliveredFiles));
         editor.putString(STATE_CONTACTS, gson.toJson(contacts));
         editor.putString(STATE_EVENT, uploadFileUrl);
         editor.putString(STATE_EVENT_NAME, eventName);
@@ -333,19 +331,16 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
         eventName = sharedPref.getString(STATE_EVENT_NAME, null);
         captionInstagram = sharedPref.getString(STATE_EVENT_INSTAGRAM_CAPTION, null);
         captionTwitter = sharedPref.getString(STATE_EVENT_TWITTER_CAPTION, null);
-        String serializedVideoPaths = sharedPref.getString(STATE_VIDEOS, "[]");
-        String serializedImagePaths = sharedPref.getString(STATE_IMAGES, "[]");
+        String serializedUndeliveredFiles = sharedPref.getString(STATE_UNDELIVERED_FILES, "[]");
         String serializedContacts = sharedPref.getString(STATE_CONTACTS, "[]");
 
         Gson gson = new Gson();
-        videoPaths = gson.fromJson(serializedVideoPaths, new TypeToken<ArrayList<String>>() {}.getType());
-        imagePaths = gson.fromJson(serializedImagePaths, new TypeToken<ArrayList<String>>() {}.getType());
+        undeliveredFiles = gson.fromJson(serializedUndeliveredFiles, new TypeToken<ArrayList<UndeliveredFile>>() {}.getType());
         contacts = gson.fromJson(serializedContacts, new TypeToken<ArrayList<Contact>>() {}.getType());
 
         Log.i(TAG, "Restored uploadFileUrl: " + uploadFileUrl);
         Log.i(TAG, "Restored name: " + eventName);
-        Log.i(TAG, "Restored imagePaths: " + imagePaths);
-        Log.i(TAG, "Restored videoPaths: " + videoPaths);
+        Log.i(TAG, "Restored undelivered files: " + undeliveredFiles);
         Log.i(TAG, "Restored contacts: " + contacts);
     }
 
@@ -360,7 +355,6 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
             Log.i(TAG, "Received image: " + data.getStringExtra("path"));
 
             boolean instaShare = data.getBooleanExtra("instaShare", false);
-            imagePaths.add(data.getStringExtra("path"));
 
             saveState();
             updateUI();
@@ -370,7 +364,6 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
             Log.i(TAG, "Received video: " + data.getStringExtra("path"));
 
             boolean instaShare = data.getBooleanExtra("instaShare", false);
-            videoPaths.add(data.getStringExtra("path"));
 
             saveState();
             updateUI();
@@ -427,11 +420,11 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
      * Update the UI.
      */
     private void updateUI() {
-        updateTextField(R.id.imageNumber, String.valueOf(imagePaths.size()), imagePaths.size() > 0 ? Color.WHITE : null);
-        updateTextField(R.id.imageLabel, null, imagePaths.size() > 0 ? Color.WHITE : null);
+//        updateTextField(R.id.imageNumber, String.valueOf(imagePaths.size()), imagePaths.size() > 0 ? Color.WHITE : null);
+//        updateTextField(R.id.imageLabel, null, imagePaths.size() > 0 ? Color.WHITE : null);
 
-        updateTextField(R.id.videoNumber, String.valueOf(videoPaths.size()), videoPaths.size() > 0 ? Color.WHITE : null);
-        updateTextField(R.id.videoLabel, null, videoPaths.size() > 0 ? Color.WHITE : null);
+//        updateTextField(R.id.videoNumber, String.valueOf(videoPaths.size()), videoPaths.size() > 0 ? Color.WHITE : null);
+//        updateTextField(R.id.videoLabel, null, videoPaths.size() > 0 ? Color.WHITE : null);
 
         updateTextField(R.id.eventIdentifier, eventName, eventName != null ? Color.WHITE : null);
         updateTextField(R.id.instagramTextView, captionInstagram, captionInstagram != null ? Color.WHITE : null);
@@ -444,8 +437,6 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
         eventName = "offline";
         contacts = new ArrayList<>();
         uploadFileUrl = null;
-        imagePaths = new ArrayList<>();
-        videoPaths = new ArrayList<>();
     }
 
     @Override
@@ -553,6 +544,13 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
     @Override
     public void createEventDone(BrilleappenClient client, JSONObject result) {
         // Not implemented
+    }
+
+    @Override
+    public void networkConnectionDone(boolean result) {
+        isOffline = !result;
+
+        Log.i(TAG, "isOffline: " + isOffline);
     }
 
     /**
