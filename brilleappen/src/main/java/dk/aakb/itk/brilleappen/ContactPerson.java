@@ -1,5 +1,7 @@
 package dk.aakb.itk.brilleappen;
 
+import com.google.gson.internal.LinkedTreeMap;
+
 import java.util.Map;
 
 public class ContactPerson {
@@ -8,9 +10,15 @@ public class ContactPerson {
     public final String email;
 
     ContactPerson(String json) {
-        Map<String, Object> values = Util.getValues(json);
+        Map values = Util.getValues(json);
         this.name = (String)values.get("name");
-        this.phone = (String)values.get("phone");
+        this.phone = (String)values.get("telephone");
+        this.email = (String)values.get("email");
+    }
+
+    ContactPerson(LinkedTreeMap values) {
+        this.name = (String)values.get("name");
+        this.phone = (String)values.get("telephone");
         this.email = (String)values.get("email");
     }
 }
