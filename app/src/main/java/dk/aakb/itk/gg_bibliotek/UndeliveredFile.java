@@ -1,15 +1,11 @@
 package dk.aakb.itk.gg_bibliotek;
 
+import dk.aakb.itk.brilleappen.Event;
+
 public class UndeliveredFile {
     private String filePath;
     private String eventUrl;
-    private String fileDeliveryUrl;
-
-    public UndeliveredFile(String filePath, String eventUrl, String fileDeliveryUrl) {
-        this.filePath = filePath;
-        this.eventUrl = eventUrl;
-        this.fileDeliveryUrl = fileDeliveryUrl;
-    }
+    private Event event;
 
     public String getEventUrl() {
         return eventUrl;
@@ -19,19 +15,19 @@ public class UndeliveredFile {
         this.eventUrl = eventUrl;
     }
 
-    public String getFileDeliveryUrl() {
-        return fileDeliveryUrl;
-    }
-
-    public void setFileDeliveryUrl(String fileDeliveryUrl) {
-        this.fileDeliveryUrl = fileDeliveryUrl;
-    }
-
     public String getFilePath() {
         return filePath;
     }
 
     public void setFilePath(String filePath) {
         this.filePath = filePath;
+    }
+
+    public Event getEvent() {
+        return event;
+    }
+
+    public void setEvent(Event event) {
+        this.event = event;
     }
 }

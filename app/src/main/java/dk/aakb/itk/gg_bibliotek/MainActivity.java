@@ -34,7 +34,7 @@ import dk.aakb.itk.brilleappen.BrilleappenClientListener;
 import dk.aakb.itk.brilleappen.Event;
 import dk.aakb.itk.brilleappen.Media;
 
-public class MainActivity extends BaseActivity implements BrilleappenClientListener,  GestureDetector.BaseListener, NetworkConnectionListener  {
+public class MainActivity extends BaseActivity implements BrilleappenClientListener,  GestureDetector.BaseListener  {
     public static final String FILE_DIRECTORY = "Bibliotek";
 
     private static final String TAG = "bibliotek MainActivity";
@@ -60,7 +60,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
     private String eventName;
     private String captionTwitter;
     private String captionInstagram;
-    private boolean isOffline;
+    private boolean isOffline = false;
     private int numberOfImages = 0;
     private int numberOfVideos = 0;
 
@@ -79,8 +79,6 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        (new NetworkConnection(this, this.getBaseContext())).execute();
 
         getWindow().requestFeature(WindowUtils.FEATURE_VOICE_COMMANDS);
         getWindow().requestFeature(Window.FEATURE_OPTIONS_PANEL);
@@ -510,13 +508,6 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
     @Override
     public void createEventDone(BrilleappenClient client, boolean success, String eventUrl) {
         // Not implemented
-    }
-
-    @Override
-    public void networkConnectionDone(boolean result) {
-        isOffline = !result;
-
-        Log.i(TAG, "isOffline: " + isOffline);
     }
 
     /**
