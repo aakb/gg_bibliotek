@@ -37,6 +37,10 @@ public class UndeliveredFile {
         this.event = event;
     }
 
+    public boolean isOfflineEvent() {
+        return this.eventUrl == null && this.event == null;
+    }
+
     @Override
     public String toString() {
         return "UndeliveredFile{" + filePath + "}";
