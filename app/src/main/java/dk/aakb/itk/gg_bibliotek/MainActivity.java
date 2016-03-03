@@ -165,7 +165,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
                 featureId == Window.FEATURE_OPTIONS_PANEL) {
 
             // Add contacts menu, if not already added.
-            if (menu.findItem(R.id.make_call_menu_item).getSubMenu().size() <= 0) {
+            if (menu.findItem(R.id.make_call_menu_item).getSubMenu().size() <= 1) {
                 for (int i = 0; i < contacts.size(); i++) {
                     menu.findItem(R.id.make_call_menu_item).getSubMenu().add(R.id.main_menu_group_main, R.id.contacts_menu_item, i, contacts.get(i).getName());
                 }
@@ -450,7 +450,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
                 this.eventName = event.title;
                 this.captionTwitter = event.twitterCaption;
                 this.captionInstagram = event.instagramCaption;
-                this.contacts = new ArrayList<Contact>();
+                this.contacts = new ArrayList<>();
                 for (ContactPerson cp : event.contactPersons) {
                     contacts.add(new Contact(cp.name, cp.phone));
                 }
