@@ -131,7 +131,7 @@ public class BrilleappenClientTest extends ApplicationTestCase<Application> impl
     }
 
     @Override
-    public void sendFileDone(BrilleappenClient client, boolean success, Media media) {
+    public void sendFileDone(BrilleappenClient client, boolean success, File file, Media media) {
         assertNotNull(media);
         //clientResult = result;
         signal.countDown();

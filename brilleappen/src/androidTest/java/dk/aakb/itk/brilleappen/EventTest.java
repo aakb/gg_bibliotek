@@ -8,7 +8,7 @@ public class EventTest extends TestCase {
 
         Event event = new Event(json);
         assertNotNull(event);
-        assertNotNull(event.contactPeople);
-        assertEquals(2, event.contactPeople.size());
+        assertNotNull(event.contactPersons);
+        assertEquals(2, event.contactPersons.size());
     }
 }
