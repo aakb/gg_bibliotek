@@ -31,6 +31,7 @@ import java.util.Properties;
 
 import dk.aakb.itk.brilleappen.BrilleappenClient;
 import dk.aakb.itk.brilleappen.BrilleappenClientListener;
+import dk.aakb.itk.brilleappen.ContactPerson;
 import dk.aakb.itk.brilleappen.Event;
 import dk.aakb.itk.brilleappen.Media;
 
@@ -48,6 +49,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
     private static final String STATE_EVENT_NAME = "event_name";
     private static final String STATE_EVENT_TWITTER_CAPTION = "event_twitter_caption";
     private static final String STATE_EVENT_INSTAGRAM_CAPTION = "event_instagram_caption";
+    private static final String STATE_NUMBER_OF_FILES = "number_of_files";
 
     private static final int MENU_MAIN = 1;
     private static final int MENU_START = 0;
@@ -164,7 +166,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
                 featureId == Window.FEATURE_OPTIONS_PANEL) {
 
             // Add contacts menu, if not already added.
-            if (menu.findItem(R.id.make_call_menu_item).getSubMenu().size() <= 0) {
+            if (menu.findItem(R.id.make_call_menu_item).getSubMenu().size() <= 1) {
                 for (int i = 0; i < contacts.size(); i++) {
                     menu.findItem(R.id.make_call_menu_item).getSubMenu().add(R.id.main_menu_group_main, R.id.contacts_menu_item, i, contacts.get(i).getName());
                 }
@@ -309,6 +311,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
         editor.putString(STATE_EVENT_NAME, eventName);
         editor.putString(STATE_EVENT_INSTAGRAM_CAPTION, captionInstagram);
         editor.putString(STATE_EVENT_TWITTER_CAPTION, captionTwitter);
+        editor.putInt(STATE_NUMBER_OF_FILES, numberOfFiles);
         editor.apply();
     }
 
@@ -331,6 +334,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
         eventName = sharedPref.getString(STATE_EVENT_NAME, null);
         captionInstagram = sharedPref.getString(STATE_EVENT_INSTAGRAM_CAPTION, null);
         captionTwitter = sharedPref.getString(STATE_EVENT_TWITTER_CAPTION, null);
+        numberOfFiles = sharedPref.getInt(STATE_NUMBER_OF_FILES, 0);
         String serializedUndeliveredFiles = sharedPref.getString(STATE_UNDELIVERED_FILES, "[]");
         String serializedContacts = sharedPref.getString(STATE_CONTACTS, "[]");
 
@@ -340,6 +344,7 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
 
         Log.i(TAG, "Restored uploadFileUrl: " + uploadFileUrl);
         Log.i(TAG, "Restored name: " + eventName);
+        Log.i(TAG, "Restored numberOfFiles: " + numberOfFiles);
         Log.i(TAG, "Restored undelivered files: " + undeliveredFiles);
         Log.i(TAG, "Restored contacts: " + contacts);
     }
@@ -356,6 +361,8 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
 
             boolean instaShare = data.getBooleanExtra("instaShare", false);
 
+            numberOfFiles++;
+
             saveState();
             updateUI();
 
@@ -364,6 +371,8 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
             Log.i(TAG, "Received video: " + data.getStringExtra("path"));
 
             boolean instaShare = data.getBooleanExtra("instaShare", false);
+
+            numberOfFiles++;
 
             saveState();
             updateUI();
@@ -448,6 +457,10 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
                 this.eventName = event.title;
                 this.captionTwitter = event.twitterCaption;
                 this.captionInstagram = event.instagramCaption;
+                this.contacts = new ArrayList<>();
+                for (ContactPerson cp : event.contactPersons) {
+                    contacts.add(new Contact(cp.name, cp.phone));
+                }
 
                 uploadFileUrl = event.addFileUrl;
 
