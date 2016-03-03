@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.FrameLayout;
@@ -27,6 +28,8 @@ import java.util.Map;
 public class QRActivity extends BaseActivity {
     private static final String TAG = "QRActivity";
     private static final int   SCANS_PER_SEC = 6;
+
+    private AudioManager audioManager;
 
     private Camera camera;
     private QRPreview qrPreview;
@@ -84,8 +87,12 @@ public class QRActivity extends BaseActivity {
                 multiFormatReader.reset();
             }
             if (result != null) {
+                releaseCamera();
+
                 proposeAToast(R.string.qr_code_scanned);
                 Log.i(TAG, "Result: " + result.getText());
+
+                audioManager.playSoundEffect(AudioManager.FX_KEY_CLICK);
 
                 // Add path to file as result
                 Intent returnIntent = new Intent();
@@ -118,6 +125,12 @@ public class QRActivity extends BaseActivity {
 
         // Create an instance of Camera
         camera = getCameraInstance();
+        if (camera == null) {
+            proposeAToast(R.string.no_camera);
+            finish();
+        }
+
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
         // Create our Preview view and set it as the content of our activity.
         qrPreview = new QRPreview(this, camera, previewCallback);

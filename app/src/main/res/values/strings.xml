@@ -1,8 +1,7 @@
 <resources>
     <string name="app_name">Dokk1 Event</string>
     <string name="countdown_default">…</string>
-    <string name="progress_image">Images</string>
-    <string name="progress_videos">Videos</string>
+    <string name="files_label">Files</string>
     <string name="event">Event: </string>
     <string name="init_event">Open menu to init event</string>
     <string name="no_media_files">No media files</string>
@@ -30,4 +29,10 @@
     <string name="swipe_actions">Swipe FORWARD to INSTASHARE.\nSwipe BACK to ARCHIVE.\nSwipe DOWN to CANCEL.\n"</string>
     <string name="qr_code_scanned">QR code scanned</string>
     <string name="scanning_qr_code">Scanning QR code</string>
+
+    <string name="is_offline">Device is offline</string>
+    <string name="is_offline_file_not_sent">Offline - file saved for later</string>
+    <string name="offline_event">Offline event</string>
+    <string name="no_camera">The camera is not available</string>
+    <string name="tap_to_stop_recording">"Tap to stop recording</string>
 </resources>

@@ -4,8 +4,6 @@ import android.app.Application;
 import android.test.ApplicationTestCase;
 import android.test.suitebuilder.annotation.Suppress;
 
-import org.json.JSONObject;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -21,13 +19,13 @@ public class BrilleappenClientTest extends ApplicationTestCase<Application> impl
 
     CountDownLatch signal;
     BrilleappenClient client;
-    JSONObject clientResult;
+    Media media;
 
-    @Suppress
+    // @ Suppress
     public void testCreateEvent() {
         try {
-            client = createClient("http://brilleappen.hulk.aakb.dk/brilleappen/event/create");
-            clientResult = null;
+            client = createClient(serviceBaseUrl + "/brilleappen/event/create");
+            media = null;
 
             signal = new CountDownLatch(1);
 
@@ -39,11 +37,15 @@ public class BrilleappenClientTest extends ApplicationTestCase<Application> impl
         }
     }
 
-    public void createEventDone(BrilleappenClient client, JSONObject result) {
-        assertNotNull(result);
-        assertTrue(result.has("url"));
+    @Override
+    public void createEventDone(BrilleappenClient client, boolean success, String eventUrl) {
+        assertTrue(success);
+        assertNull(eventUrl);
+        assertNotNull(eventUrl);
+        //assertTrue(result.has("url"));
     }
 
+    @Suppress
     public void testSendFile() {
         File file = new File(getContext().getCacheDir(), "test.png");
         boolean share = false;
@@ -79,7 +81,7 @@ public class BrilleappenClientTest extends ApplicationTestCase<Application> impl
 
         try {
             client = createClient();
-            clientResult = null;
+            media = null;
 
             signal = new CountDownLatch(1);
 
@@ -91,7 +93,7 @@ public class BrilleappenClientTest extends ApplicationTestCase<Application> impl
 
             client = createClient();
 
-            client.notifyFile(clientResult);
+            client.notifyFile(media);
 
             signal.await();
 
@@ -101,14 +103,13 @@ public class BrilleappenClientTest extends ApplicationTestCase<Application> impl
     }
 
     @Suppress
-    private void testNotifyFile(JSONObject result) {
+    private void testNotifyFile(Media media) {
         try {
             client = createClient();
-            clientResult = null;
 
             signal = new CountDownLatch(1);
 
-            client.notifyFile(result, null);
+            client.notifyFile(media, null);
 
             signal.await();
         } catch (Throwable t) {
@@ -116,8 +117,10 @@ public class BrilleappenClientTest extends ApplicationTestCase<Application> impl
         }
     }
 
+    private final String serviceBaseUrl = "http://brilleappen.hulk.aakb.dk";
+
     private BrilleappenClient createClient() {
-        return createClient("http://brilleappen.hulk.aakb.dk/brilleappen/event/21d59ce2-fa69-426a-bd06-6e6c9edee086/file");
+        return createClient(serviceBaseUrl + "/brilleappen/event/21d59ce2-fa69-426a-bd06-6e6c9edee086/file");
     }
 
     private BrilleappenClient createClient(String url) {
@@ -128,26 +131,26 @@ public class BrilleappenClientTest extends ApplicationTestCase<Application> impl
     }
 
     @Override
-    public void sendFileDone(BrilleappenClient client, JSONObject result) {
-        assertTrue(result.has("notify_url"));
-        clientResult = result;
+    public void sendFileDone(BrilleappenClient client, boolean success, Media media) {
+        assertNotNull(media);
+        //clientResult = result;
         signal.countDown();
 
         //testNotifyFile(result);
     }
 
     @Override
-    public void sendFileProgress(BrilleappenClient client, int current, int total) {}
+    public void sendFileProgress(BrilleappenClient client, File file, int current, int total) {}
 
     @Override
-    public void getEventDone(BrilleappenClient client, JSONObject result) {
-        assertTrue(result.has("event"));
+    public void getEventDone(BrilleappenClient client, boolean success, Event event) {
+        //assertTrue(result.has("event"));
         signal.countDown();
     }
 
     @Override
-    public void notifyFileDone(BrilleappenClient client, JSONObject result) {
-        assertTrue(result.has("notifyMessages"));
+    public void notifyFileDone(BrilleappenClient client, boolean success, Media media) {
+//        assertTrue(result.has("notifyMessages"));
         signal.countDown();
     }
 }

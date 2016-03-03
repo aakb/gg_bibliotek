@@ -13,7 +13,7 @@ public abstract class BaseActivity extends Activity {
      *
      * @param message Message to display
      */
-    private void proposeAToast(String message) {
+    protected void proposeAToast(String message) {
         Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
     }
 

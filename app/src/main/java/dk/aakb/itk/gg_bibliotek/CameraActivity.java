@@ -3,43 +3,37 @@ package dk.aakb.itk.gg_bibliotek;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.hardware.Camera;
-import android.hardware.Camera.PictureCallback;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
-import com.google.android.glass.touchpad.Gesture;
 import com.google.android.glass.touchpad.GestureDetector;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class CameraActivity extends BaseActivity implements GestureDetector.BaseListener {
-    private static final String TAG = "CameraActivity";
-    private static final int STATE_PREVIEW = 1;
-    private static final int STATE_ACTION = 2;
+public abstract class CameraActivity extends BaseActivity implements GestureDetector.BaseListener {
+    protected static String TAG = "CameraActivity";
 
-    private Camera camera;
-    private CameraPreview cameraPreview;
-    private TextView textField;
-    private String filePrefix;
+    protected int state;
 
-    private AudioManager audioManager;
-    private GestureDetector gestureDetector;
+    protected static Camera camera;
+    protected CameraPreview cameraPreview;
+    protected TextView textField;
+    protected String filePrefix;
 
-    private int state;
+    protected AudioManager audioManager;
+    protected GestureDetector gestureDetector;
 
-    private byte[] pictureData;
+    protected int contentView = 0;
 
     /**
      * On create.
@@ -56,15 +50,9 @@ public class CameraActivity extends BaseActivity implements GestureDetector.Base
         Intent intent = getIntent();
         filePrefix = intent.getStringExtra("FILE_PREFIX");
 
-        setContentView(R.layout.activity_camera);
-
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                textField = (TextView) findViewById(R.id.text_camera_helptext);
-                textField.setText(R.string.tap_to_take_picture);
-            }
-        });
+        Log.i(TAG, "Setting content view: " + contentView);
+        setContentView(contentView);
+        textField = (TextView)findViewById(R.id.text_camera_helptext);
 
         if (!checkCameraHardware(this)) {
             Log.i(TAG, "no camera");
@@ -72,157 +60,98 @@ public class CameraActivity extends BaseActivity implements GestureDetector.Base
             return;
         }
 
-        // Create an instance of Camera
-        camera = getCameraInstance();
-
+        getCameraInstance();
         if (camera == null) {
+            Log.i(TAG, "Cannot get camera instance");
             finish();
             return;
         }
 
-        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
         gestureDetector = new GestureDetector(this).setBaseListener(this);
-
-        Log.i(TAG, "Set up cameraPreview");
 
         // Create our Preview view and set it as the content of our activity.
         cameraPreview = new CameraPreview(this, camera);
-        FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
+        FrameLayout preview = (FrameLayout)findViewById(R.id.camera_preview);
         preview.addView(cameraPreview);
-
-        Log.i(TAG, "Preview set up.");
-
-        state = STATE_PREVIEW;
     }
 
     public boolean onGenericMotionEvent(MotionEvent event) {
         return gestureDetector.onMotionEvent(event);
     }
 
-    public boolean onGesture(Gesture gesture) {
-        if (Gesture.TAP.equals(gesture)) {
-            if (state == STATE_PREVIEW) {
-                handleSingleTap();
-                return true;
-            }
-        }
-        else if (Gesture.SWIPE_RIGHT.equals(gesture)) {
-            if (state == STATE_ACTION) {
-                handleForwardSwipe();
-                return true;
-            }
-        }
-        else if (Gesture.SWIPE_LEFT.equals(gesture)) {
-            if (state == STATE_ACTION) {
-                handleBackwardSwipe();
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private void handleSingleTap() {
-        Log.i(TAG, "Single tap.");
-
-        // Run onUIThread?
-        audioManager.playSoundEffect(AudioManager.FX_KEY_CLICK);
-
-        camera.takePicture(null, null, mPicture);
-    }
-
-    private void handleForwardSwipe() {
-        Log.i(TAG, "InstaShare!!!");
-        returnPicture(true);
-    }
-
-    private void handleBackwardSwipe() {
-        Log.i(TAG, "Archive.");
-        returnPicture(false);
-    }
-
-    private void returnPicture(boolean instaShare) {
-        releaseCamera();
-
-        File pictureFile = getOutputFile();
-        if (pictureFile == null) {
-            Log.d(TAG, "Error creating media file, check storage permissions");
-            return;
-        }
-
-        try {
-            FileOutputStream fos = new FileOutputStream(pictureFile);
-            fos.write(pictureData);
-            fos.close();
-
-            // Add path to file as result
-            Intent returnIntent = new Intent();
-            returnIntent.putExtra("path", pictureFile.getAbsolutePath());
-            returnIntent.putExtra("instaShare", instaShare);
-            setResult(RESULT_OK, returnIntent);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            Log.e(TAG, "File not found: " + e.getMessage());
-        } catch (IOException e) {
-            e.printStackTrace();
-            Log.e(TAG, "Error accessing file: " + e.getMessage());
-        }
-        finally {
-            finish();
-        }
-    }
-
     /**
      * A safe way to get an instance of the Camera object.
      */
-    public static Camera getCameraInstance() {
+    protected void getCameraInstance() {
         Log.i(TAG, "getting camera instance...");
+        // http://stackoverflow.com/a/19154438
+
+        if (mThread == null) {
+            mThread = new CameraHandlerThread();
+        }
+
+        synchronized (mThread) {
+            mThread.openCamera();
+        }
+    }
+
+    private static void oldOpenCamera() {
         try {
-            return Camera.open();
-        } catch (Exception e) {
-            Log.e(TAG, "could not getCameraInstance");
-            throw e;
+            camera = Camera.open();
+        }
+        catch (RuntimeException e) {
+            Log.e(TAG, "failed to open front camera");
+        }
+    }
+
+    private CameraHandlerThread mThread = null;
+
+    private static class CameraHandlerThread extends HandlerThread {
+        Handler mHandler = null;
+
+        CameraHandlerThread() {
+            super("CameraHandlerThread");
+            start();
+            mHandler = new Handler(getLooper());
+        }
+
+        synchronized void notifyCameraOpened() {
+            notify();
+        }
+
+        void openCamera() {
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    oldOpenCamera();
+                    notifyCameraOpened();
+                }
+            });
+            try {
+                wait();
+            }
+            catch (InterruptedException e) {
+                Log.w(TAG, "wait was interrupted");
+            }
         }
     }
 
     /**
      * Check if this device has a camera
      */
-    private boolean checkCameraHardware(Context context) {
+    protected boolean checkCameraHardware(Context context) {
         // this device has a camera
-// no camera on this device
+        // no camera on this device
         return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA);
     }
-
-    /**
-     * Picture callback.
-     */
-    private PictureCallback mPicture = new PictureCallback() {
-        @Override
-        public void onPictureTaken(byte[] data, Camera camera) {
-            releaseCamera();
-
-            pictureData = data;
-
-            runOnUiThread(new Runnable() {
-                              @Override
-                              public void run() {
-                                  textField.setBackgroundColor(Color.argb(125, 0, 0, 0));
-                                  textField.setTextColor(Color.WHITE);
-                                  textField.setText(R.string.swipe_actions);
-                              }
-                          }
-            );
-
-            state = STATE_ACTION;
-        }
-    };
 
     /**
      * On pause.
      */
     @Override
     protected void onPause() {
+        // http://stackoverflow.com/questions/18149964/best-use-of-handlerthread-over-other-similar-classes/19154438#comment33324681_19154438
         releaseCamera();
 
         super.onPause();
@@ -241,12 +170,11 @@ public class CameraActivity extends BaseActivity implements GestureDetector.Base
     /**
      * Release the camera resources.
      */
-    private void releaseCamera() {
+    protected void releaseCamera() {
         Log.i(TAG, "releasing camera");
 
         if (camera != null) {
             camera.stopPreview();
-            cameraPreview.release();
             camera.release();        // release the camera for other applications
             camera = null;
         }
@@ -255,7 +183,7 @@ public class CameraActivity extends BaseActivity implements GestureDetector.Base
     /**
      * Create a File for saving an image
      */
-    private File getOutputFile() {
+    protected File getOutputFile(String type, String extension) {
         File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), MainActivity.FILE_DIRECTORY);
 
         Log.i(TAG, mediaStorageDir.getAbsolutePath());
@@ -271,7 +199,7 @@ public class CameraActivity extends BaseActivity implements GestureDetector.Base
         // Create a media file name
         String timeStamp = new SimpleDateFormat("yyyy-MM-dd_HHmmss").format(new Date());
         File mediaFile = new File(mediaStorageDir.getPath() + File.separator +
-                filePrefix + "_image_" + timeStamp + ".jpg");
+                filePrefix + "_" + type + "_" + timeStamp + "." + extension);
         return mediaFile;
     }
 }
