@@ -1,15 +1,15 @@
 package dk.aakb.itk.brilleappen;
 
-import org.json.JSONObject;
+import java.io.File;
 
 public interface BrilleappenClientListener {
-    void createEventDone(BrilleappenClient client, JSONObject result);
+    void createEventDone(BrilleappenClient client, boolean success, String url);
 
-    void getEventDone(BrilleappenClient client, JSONObject result);
+    void getEventDone(BrilleappenClient client, boolean success, Event event);
 
-    void sendFileDone(BrilleappenClient client, JSONObject result);
+    void sendFileDone(BrilleappenClient client, boolean success, File file, Media media);
 
-    void sendFileProgress(BrilleappenClient client, int progress, int max);
+    void sendFileProgress(BrilleappenClient client, File file, int progress, int max);
 
-    void notifyFileDone(BrilleappenClient client, JSONObject result);
+    void notifyFileDone(BrilleappenClient client, boolean success, Media media);
 }
