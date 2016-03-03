@@ -1,6 +1,4 @@
-package dk.aakb.itk.gg_bibliotek;
-
-import dk.aakb.itk.brilleappen.Event;
+package dk.aakb.itk.brilleappen;
 
 public class UndeliveredFile {
     private String filePath;

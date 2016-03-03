@@ -34,6 +34,7 @@ import dk.aakb.itk.brilleappen.BrilleappenClientListener;
 import dk.aakb.itk.brilleappen.ContactPerson;
 import dk.aakb.itk.brilleappen.Event;
 import dk.aakb.itk.brilleappen.Media;
+import dk.aakb.itk.brilleappen.UndeliveredFile;
 
 public class MainActivity extends BaseActivity implements BrilleappenClientListener, GestureDetector.BaseListener {
     public static final String FILE_DIRECTORY = "Bibliotek";
