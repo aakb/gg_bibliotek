@@ -326,14 +326,23 @@ public class MainActivity extends BaseActivity implements BrilleappenClientListe
         String serializedContacts = sharedPref.getString(STATE_CONTACTS, "[]");
 
         Gson gson = new Gson();
-        event = gson.fromJson(serializedEvent, new TypeToken<Event>() {
-        }.getType());
-        undeliveredFiles = gson.fromJson(serializedUndeliveredFiles, new TypeToken<ArrayList<UndeliveredFile>>() {
-        }.getType());
-        contacts = gson.fromJson(serializedContacts, new TypeToken<ArrayList<Contact>>() {
-        }.getType());
+        try {
+            event = gson.fromJson(serializedEvent, new TypeToken<Event>() {
+            }.getType());
+        } catch (Exception e) {
+        }
+        try {
+            undeliveredFiles = gson.fromJson(serializedUndeliveredFiles, new TypeToken<ArrayList<UndeliveredFile>>() {
+            }.getType());
+        } catch (Exception e) {
+        }
+        try {
+            contacts = gson.fromJson(serializedContacts, new TypeToken<ArrayList<Contact>>() {
+            }.getType());
+        } catch (Exception e) {
+        }
 
-        Log.i(TAG, "Restored event: " + event.title);
+        Log.i(TAG, "Restored event: " + event);
         Log.i(TAG, "Restored numberOfFiles: " + numberOfFiles);
         Log.i(TAG, "Restored undelivered files: " + undeliveredFiles);
         Log.i(TAG, "Restored contacts: " + contacts);
