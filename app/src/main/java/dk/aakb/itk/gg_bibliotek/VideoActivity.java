@@ -1,6 +1,5 @@
 package dk.aakb.itk.gg_bibliotek;
 
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.hardware.Camera;
@@ -10,7 +9,6 @@ import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
-import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import com.google.android.glass.touchpad.Gesture;
@@ -54,7 +52,7 @@ public class VideoActivity extends CameraActivity implements GestureDetector.Bas
         launchUnlimitedVideo();
 
         state = STATE_RECORDING;
-		}
+    }
 
     public boolean onGenericMotionEvent(MotionEvent event) {
         return gestureDetector.onMotionEvent(event);

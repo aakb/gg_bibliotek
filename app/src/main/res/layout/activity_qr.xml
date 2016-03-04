@@ -15,9 +15,9 @@
     </FrameLayout>
 
     <TextView
-        android:layout_width="69dp"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/qrCodeInfo"
+        android:id="@+id/text_qr_helptext"
         android:layout_gravity="center_horizontal|bottom"
         android:gravity="fill_horizontal|bottom" />
 
