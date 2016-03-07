@@ -1,6 +1,5 @@
 package dk.aakb.itk.gg_bibliotek;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -140,7 +139,7 @@ public class QRActivity extends BaseActivity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                TextView qrCodeInfo = (TextView) findViewById(R.id.qrCodeInfo);
+                TextView qrCodeInfo = (TextView) findViewById(R.id.text_qr_helptext);
                 qrCodeInfo.setText(R.string.scanning_qr_code);
             }
         });
